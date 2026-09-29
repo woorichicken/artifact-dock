@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Artifact Dock",
+  "version": "0.3.1",
+  "description": "로컬 HTML·Claude 아티팩트 탭을 사이드바 하나로 관리합니다. 중복 탭 제거 + 포커스 가로채기 방지.",
+  "minimum_chrome_version": "121",
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "storage",
+    "sidePanel",
+    "nativeMessaging",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel.html"
+  },
+  "action": {
+    "default_title": "Artifact Dock 열기",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_page": "src/options.html",
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+A",
+        "mac": "Command+Shift+U"
+      },
+      "description": "Artifact Dock 사이드바 토글"
+    }
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr1FbYEbgoIMJbJUlT+opf37Y5b14NXskyifVgYXgQc+z3AtKJJkkBOKG2yNgYaCVZhGLoVSEIHiJWoyU2FbelK38CnViI0CwjZvboZ0yaaCztCa2NPcqtzmTDCjyqowZR6RZZOqW8RgydGGnccAOWXTU3/ziqlHPo7jfLGqmYkUV7INrF55BB/g9mu4dpDMkvIcIn7kDj8zKRQofgZxE8cnF2CnLgkCqo7BkQ+qeVBddUscLm3NFXWHzcjvM8k2MN1tdw1Y1Jkv4ZtxH0/AncJgDpl1bK2HXOPfX0lfWcpBYaArvAcHmR/um1QvkRFDxH4mFByAQNZOveTPrAIxNdwIDAQAB"
+}

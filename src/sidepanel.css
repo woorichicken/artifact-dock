@@ -1,0 +1,163 @@
+:root {
+  --bg: #ffffff;
+  --fg: #1b1b1d;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --hover: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --danger: #b91c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1f2023;
+    --fg: #e8e8ea;
+    --muted: #9aa0a6;
+    --line: #34363b;
+    --hover: #2a2c31;
+    --accent: #7aa2f7;
+    --accent-soft: #23304a;
+    --danger: #f87171;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.45 -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+.bar.foot {
+  border-bottom: none;
+  border-top: 1px solid var(--line);
+  justify-content: space-between;
+}
+
+#q {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 12.5px;
+}
+#q:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
+.icon-btn, .ghost {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-size: 12px;
+}
+.icon-btn:hover, .ghost:hover { background: var(--hover); color: var(--fg); }
+
+.list { flex: 1 1 auto; overflow-y: auto; padding: 4px 0 10px; }
+
+.section {
+  padding: 10px 12px 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.row:hover { background: var(--hover); }
+.row.active { background: var(--accent-soft); border-left-color: var(--accent); }
+.row.closed .name { color: var(--muted); }
+
+.favicon {
+  width: 16px; height: 16px;
+  flex: 0 0 16px;
+  border-radius: 3px;
+  object-fit: contain;
+}
+.favicon.fallback {
+  display: grid; place-items: center;
+  font-size: 11px;
+  background: var(--hover);
+}
+
+.meta { flex: 1 1 auto; min-width: 0; }
+.name {
+  font-size: 12.5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sub {
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* 긴 경로는 JS 에서 앞쪽을 …로 줄인다.
+     CSS direction:rtl 트릭은 슬래시 같은 중립 문자가 뒤로 밀려 경로가 뒤집혀 보인다 */
+}
+
+.actions { display: flex; gap: 1px; opacity: 0; flex: 0 0 auto; }
+.row:hover .actions, .row:focus-within .actions { opacity: 1; }
+.row .actions .icon-btn.pinned { opacity: 1; color: var(--accent); }
+.row.pinned .actions { opacity: 1; }
+
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.muted { color: var(--muted); font-size: 11px; }
+
+.foot-actions { display: flex; gap: 2px; }
+
+.badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  cursor: pointer;
+}
+.badge:hover { filter: brightness(1.15); }
+
+.toast {
+  position: fixed;
+  left: 10px; right: 10px; bottom: 44px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity .18s;
+  pointer-events: none;
+}
+.toast.on { opacity: 1; }

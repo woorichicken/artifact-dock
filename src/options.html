@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>Artifact Dock 설정</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+  <style>
+    body { display: block; padding: 24px; max-width: 620px; margin: 0 auto; height: auto; font-size: 14px; }
+    h1 { font-size: 17px; margin: 0 0 4px; }
+    h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 26px 0 8px; }
+    .field { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--line); }
+    .field label { flex: 1; cursor: pointer; }
+    .field .desc { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    select, input[type=text] { background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 13px; }
+    .saved { color: var(--accent); font-size: 12px; opacity: 0; transition: opacity .2s; }
+    .saved.on { opacity: 1; }
+  </style>
+</head>
+<body>
+  <h1>Artifact Dock</h1>
+  <p class="muted">로컬 HTML·아티팩트 탭을 하나로 묶습니다. 값을 바꾸면 바로 저장됩니다. <span id="saved" class="saved">저장됨</span></p>
+
+  <h2>중복 탭</h2>
+  <div class="field">
+    <label for="dedupe">같은 문서면 탭 하나만 유지
+      <span class="desc">이미 열린 문서를 또 열면 기존 탭을 재사용하고 새 탭은 닫습니다.</span></label>
+    <input type="checkbox" id="dedupe" />
+  </div>
+  <div class="field">
+    <label for="matchMode">같은 문서 판정 기준
+      <span class="desc">
+        <b>전체 경로</b> 같은 파일일 때만 합침 ·
+        <b>파일 이름만</b> <code>/a/report.html</code> 과 <code>/b/report.html</code> 도 합침 ·
+        <b>문서 제목</b> 파일명이 달라도 <code>&lt;title&gt;</code> 이 같으면 합침(제목이 붙기 전에는 경로로 판정하므로 [정리] 버튼에서 주로 효과가 납니다)
+      </span></label>
+    <select id="matchMode">
+      <option value="path">전체 경로 (안전)</option>
+      <option value="filename">파일 이름만</option>
+      <option value="title">문서 제목</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="reloadOnDuplicate">재사용할 때 새로고침
+      <span class="desc">에이전트가 같은 파일을 다시 썼을 테니 기본은 켜둡니다.</span></label>
+    <input type="checkbox" id="reloadOnDuplicate" />
+  </div>
+
+  <h2>포커스</h2>
+  <div class="field">
+    <label for="focusGuard">외부에서 열린 탭에 포커스를 주지 않기
+      <span class="desc">터미널에서 연 탭이면 직전에 보던 탭으로 되돌립니다. 페이지 안에서 링크로 연 탭은 건드리지 않습니다.</span></label>
+    <input type="checkbox" id="focusGuard" />
+  </div>
+
+  <h2>탭 그룹</h2>
+  <div class="field">
+    <label for="autoGroup">아티팩트 탭을 그룹으로 묶기
+      <span class="desc">탭바에서 한 덩어리로 모여 자리를 덜 차지합니다.</span></label>
+    <input type="checkbox" id="autoGroup" />
+  </div>
+  <div class="field">
+    <label for="groupTitle">그룹 이름</label>
+    <input type="text" id="groupTitle" />
+  </div>
+  <div class="field">
+    <label for="groupColor">그룹 색</label>
+    <select id="groupColor">
+      <option>grey</option><option>blue</option><option>red</option><option>yellow</option>
+      <option>green</option><option>pink</option><option>purple</option><option>cyan</option><option>orange</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="viewMode">사이드바에서 문서를 볼 때
+      <span class="desc">
+        <b>한 개만 꺼내기</b> 볼 탭만 그룹 밖으로 빼서 보여줍니다 — 나머지는 접힌 채 그대로 (권장) ·
+        <b>그룹 펼치기</b> 평범하게 활성화합니다. 그룹이 펼쳐지고, 다른 탭으로 나가면 다시 접힙니다
+      </span></label>
+    <select id="viewMode">
+      <option value="solo">한 개만 꺼내기</option>
+      <option value="expand">그룹 펼치기</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="collapseGroup">그룹을 접어두기
+      <span class="desc">탭바를 최대한 아끼려면 켜세요. 사이드바에서 골라 여는 사용에 맞습니다.</span></label>
+    <input type="checkbox" id="collapseGroup" />
+  </div>
+
+  <div class="field">
+    <label for="sweepOnStart">브라우저를 켤 때 중복 탭 자동 정리
+      <span class="desc">꺼두면 사이드바의 [정리] 버튼을 누를 때만 정리합니다.</span></label>
+    <input type="checkbox" id="sweepOnStart" />
+  </div>
+
+  <div class="field">
+    <label for="maxOpenTabs">아티팩트 탭 최대 개수
+      <span class="desc">0 이면 제한 없음. 넘으면 오래 안 본 것부터 닫습니다 — 목록에는 남아서 클릭 한 번으로 되살아납니다(고정한 문서와 보고 있는 탭은 제외).</span></label>
+    <input type="number" id="maxOpenTabs" min="0" max="200" step="1" style="width:72px" />
+  </div>
+
+  <h2>대상</h2>
+  <div class="field">
+    <label for="trackClaudeArtifacts">claude.ai 아티팩트도 관리
+      <span class="desc">끄면 로컬 <code>file://</code> HTML 만 다룹니다.</span></label>
+    <input type="checkbox" id="trackClaudeArtifacts" />
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# 확장 ID 는 manifest 의 공개키(key)로 이미 고정된다. 개인키는 .crx 서명용이라 저장소에 두지 않는다.
+host/extension-key.pem
+.DS_Store
+
+# 다른 도구가 작업 폴더에 남기는 상태 파일
+.omc/
+
+# 웹스토어 업로드 산출물 (scripts/build-cws.sh)
+dist/

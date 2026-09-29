@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# artifact-open — 포커스를 뺏지 않고 Chrome 으로 HTML/URL 을 연다.
+#
+# 어떻게 동작하나:
+#   1순위) Artifact Dock 확장에 소켓으로 부탁한다 → 확장이 백그라운드 탭을 만든다.
+#   확장 응답이 없거나 실패하면 nonzero로 중단한다. 브라우저 직접 열기는 하지 않는다.
+#
+#   `open x.html` 도 `open -g` 도 Chrome 을 앞으로 끌어낸다(실측). 그래서 둘 다 쓰지 않는다.
+#
+# 사용법:
+#   artifact-open report.html                # 백그라운드로 열기 (기본)
+#   artifact-open a.html b.html              # 여러 개
+#   artifact-open -f report.html             # 포커스를 주면서 열기
+#   artifact-open --status                   # 확장 연결 상태 확인
+#   artifact-open https://example.com
+
+set -euo pipefail
+
+SOCK="${ARTIFACT_DOCK_SOCKET:-$HOME/Library/Application Support/ArtifactDock/dock.sock}"
+ACTIVATE=0
+QUIET="${ARTIFACT_OPEN_QUIET:-0}"
+
+usage() {
+  awk 'NR>1 { if ($0 !~ /^#/) exit; sub(/^# ?/, ""); print }' "$0"
+  exit "${1:-0}"
+}
+
+warn() { [ "$QUIET" = "1" ] || echo "artifact-open: $*" >&2; }
+
+# 확장에 요청을 보낸다. 0=명시적 성공 응답, 그 외=실패.
+send_to_extension() {
+  python3 - "$SOCK" "$1" "$2" <<'PY'
+import json, pathlib, socket, sys
+
+sock_path, target, activate = sys.argv[1], sys.argv[2], sys.argv[3] == "1"
+
+# 파일 경로는 확장이 이해하는 file:// URL 로 바꾼다. 공백·한글은 as_uri 가 인코딩해 준다.
+url = target if "://" in target else pathlib.Path(target).as_uri()
+
+try:
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(9)
+    s.connect(sock_path)
+    s.sendall((json.dumps({"cmd": "open", "url": url, "activate": activate}) + "\n").encode())
+    line = s.makefile("r", encoding="utf-8").readline()
+    resp = json.loads(line) if line.strip() else {}
+except (FileNotFoundError, ConnectionRefusedError, socket.timeout, OSError):
+    sys.exit(4)   # 소켓 없음 = 확장/호스트가 안 떠 있음
+except Exception as e:
+    print(f"소켓 오류: {e}", file=sys.stderr)
+    sys.exit(4)
+
+if isinstance(resp, dict) and resp.get("ok") is True:
+    if resp.get("reused"):
+        print("reused", file=sys.stderr)
+    sys.exit(0)
+
+print(resp.get("error", "확장이 처리하지 못했습니다") if isinstance(resp, dict) else "잘못된 확장 응답", file=sys.stderr)
+sys.exit(3)
+PY
+}
+
+status() {
+  if [ -S "$SOCK" ]; then
+    echo "확장 연결: 살아있음 ($SOCK)"
+  else
+    echo "확장 연결: 없음 — Chrome 에서 Artifact Dock 을 켜고 install.sh 를 실행했는지 확인하세요"
+    exit 1
+  fi
+}
+
+args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -f|--foreground) ACTIVATE=1; shift ;;
+    -q|--quiet) QUIET=1; shift ;;
+    --status) status; exit 0 ;;
+    -h|--help) usage 0 ;;
+    --) shift; args+=("$@"); break ;;
+    *) args+=("$1"); shift ;;
+  esac
+done
+
+[ ${#args[@]} -gt 0 ] || usage 1
+
+for target in "${args[@]}"; do
+  if [[ "$target" == *://* ]]; then
+    resolved="$target"
+  else
+    [ -e "$target" ] || { echo "artifact-open: 파일이 없습니다: $target" >&2; exit 1; }
+    dir="$(cd "$(dirname "$target")" && pwd)"
+    resolved="$dir/$(basename "$target")"
+  fi
+
+  if send_to_extension "$resolved" "$ACTIVATE"; then
+    continue
+  else
+    code=$?
+    warn "Artifact Dock 열기에 실패했습니다. HTML을 브라우저로 직접 열지 않았습니다. 확장 연결을 확인한 뒤 다시 시도하세요."
+    exit "$code"
+  fi
+done

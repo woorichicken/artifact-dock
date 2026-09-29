@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""Route HTML through Artifact Dock even for Node's shell-free subprocess calls."""
+import os
+from pathlib import Path
+import shutil
+import sys
+from urllib.parse import unquote, urlsplit
+
+
+def is_html(target):
+    # A literal filename may contain # or ?, so check that before parsing a URL.
+    if '://' not in target:
+        return Path(target).suffix.lower() in ('.html', '.htm')
+    try:
+        url = urlsplit(target)
+        return url.scheme.lower() in ('file', 'http', 'https') and Path(unquote(url.path)).suffix.lower() in ('.html', '.htm')
+    except ValueError:
+        return False
+
+
+def fail(message):
+    print('open: ' + message, file=sys.stderr)
+    return 2
+
+
+def main(args=None):
+    args = list(sys.argv[1:] if args is None else args)
+    if not any(is_html(arg) for arg in args):
+        # Absolute path avoids recursing into this wrapper.
+        os.execv('/usr/bin/open', ['/usr/bin/open', *args])
+        return 0
+
+    targets = []
+    options = True
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if options and arg == '--':
+            options = False
+        elif options and arg in ('-g', '--background'):
+            pass  # Artifact Dock opens in the background by default.
+        elif options and arg in ('-a', '--application', '-b', '--bundle-id'):
+            i += 1
+            if i >= len(args) or args[i].startswith('-') or is_html(args[i]):
+                return fail('앱 지정 옵션에 값이 필요합니다. HTML은 artifact-open으로 여세요.')
+            # An explicit browser must not bypass Artifact Dock for an HTML file.
+        elif options and arg.startswith('-'):
+            return fail(f'HTML 열기에서 지원하지 않는 옵션: {arg}. artifact-open을 사용하세요.')
+        else:
+            targets.append(arg)
+        i += 1
+
+    if not targets or not all(is_html(target) for target in targets):
+        return fail('HTML과 다른 파일을 함께 열지 않습니다. 파일 종류별로 명령을 나누세요.')
+    command = shutil.which('artifact-open')
+    if not command:
+        return fail('artifact-open이 없습니다. HTML을 브라우저로 직접 열지 않았습니다.')
+    os.execv(command, [command, '--', *targets])
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

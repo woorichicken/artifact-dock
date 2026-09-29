@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Artifact Dock</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header class="bar">
+    <input id="q" type="search" placeholder="문서 검색" autocomplete="off" spellcheck="false" />
+    <button id="settings" class="icon-btn" title="설정">⚙</button>
+  </header>
+
+  <main id="list" class="list" aria-live="polite"></main>
+
+  <footer class="bar foot">
+    <span id="count" class="muted"></span>
+    <span class="foot-actions">
+      <button id="sweep" class="ghost" title="같은 문서의 중복 탭을 닫고 그룹으로 모읍니다">정리</button>
+      <button id="closeAll" class="ghost" title="탭만 닫습니다. 목록은 '최근 닫힘'에 남아 클릭하면 다시 열립니다">탭 비우기</button>
+    </span>
+  </footer>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
