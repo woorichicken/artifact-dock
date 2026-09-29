@@ -1,0 +1,332 @@
+{
+  "extName": {
+    "message": "Artifact Dock"
+  },
+  "extDescription": {
+    "message": "로컬 HTML·Claude 아티팩트 탭을 사이드바 하나로 관리합니다. 중복 탭 제거 + 포커스 가로채기 방지."
+  },
+  "actionTitle": {
+    "message": "Artifact Dock 열기"
+  },
+  "commandToggle": {
+    "message": "Artifact Dock 사이드바 토글"
+  },
+  "searchPlaceholder": {
+    "message": "문서 검색"
+  },
+  "settingsTitle": {
+    "message": "설정"
+  },
+  "sweep": {
+    "message": "정리"
+  },
+  "sweepTitle": {
+    "message": "같은 문서의 중복 탭을 닫고 그룹으로 모읍니다"
+  },
+  "closeAll": {
+    "message": "탭 비우기"
+  },
+  "closeAllTitle": {
+    "message": "탭만 닫습니다. 목록은 '최근 닫힘'에 남아 클릭하면 다시 열립니다"
+  },
+  "untitled": {
+    "message": "(제목 없음)"
+  },
+  "dupBadgeTitle": {
+    "message": "같은 문서 탭 $ARG1$개 — 눌러서 중복 닫기",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pin": {
+    "message": "목록에 고정"
+  },
+  "unpin": {
+    "message": "고정 해제"
+  },
+  "reload": {
+    "message": "새로고침"
+  },
+  "closeTab": {
+    "message": "탭 닫기"
+  },
+  "removeHistory": {
+    "message": "기록에서 지우기"
+  },
+  "noResults": {
+    "message": "검색 결과가 없습니다."
+  },
+  "emptyTitle": {
+    "message": "열린 아티팩트가 없습니다."
+  },
+  "emptyHintCli": {
+    "message": "터미널에서 artifact-open 으로 HTML 을 열어보세요."
+  },
+  "emptyHintSetup": {
+    "message": "CLI 가 아직 연결되지 않았습니다. 설치 안내를 따라 한 번만 연결하면 됩니다."
+  },
+  "openSetup": {
+    "message": "설치 안내 열기"
+  },
+  "sectionOpen": {
+    "message": "열림 $ARG1$",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "sectionClosed": {
+    "message": "최근 닫힘"
+  },
+  "modeSolo": {
+    "message": "한 개만"
+  },
+  "modeExpand": {
+    "message": "펼침"
+  },
+  "countDocsDup": {
+    "message": "$ARG1$개 문서 · 중복 $ARG2$",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      },
+      "arg2": {
+        "content": "$2"
+      }
+    }
+  },
+  "countOpen": {
+    "message": "$ARG1$개 열림",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "countTitle": {
+    "message": "설정을 열려면 ⚙ 를 누르세요"
+  },
+  "toastSweepClosed": {
+    "message": "중복 $ARG1$개 탭을 닫고 $ARG2$개를 그룹으로 모았습니다",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      },
+      "arg2": {
+        "content": "$2"
+      }
+    }
+  },
+  "toastSweepNone": {
+    "message": "중복 없음 · $ARG1$개를 그룹으로 모았습니다",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastSweepFail": {
+    "message": "정리에 실패했습니다 (확장을 껐다 켜보세요)"
+  },
+  "statusConnected": {
+    "message": "CLI 연결됨"
+  },
+  "statusDisconnected": {
+    "message": "CLI 미연결"
+  },
+  "statusConnectedTitle": {
+    "message": "artifact-open 으로 연 파일이 백그라운드 탭으로 열립니다"
+  },
+  "statusDisconnectedTitle": {
+    "message": "눌러서 설치 안내 보기"
+  },
+  "agentPromptBtn": {
+    "message": "에이전트 프롬프트 복사"
+  },
+  "toastPromptCopied": {
+    "message": "에이전트용 프롬프트를 복사했습니다. 대화나 CLAUDE.md 에 붙여넣으세요"
+  },
+  "toastCopyFail": {
+    "message": "복사하지 못했습니다"
+  },
+  "agentPrompt": {
+    "message": "이 컴퓨터에는 Artifact Dock 이 설치돼 있다. HTML 결과물(리포트·미리보기·문서)을 브라우저로 열 때는 `open`·`xdg-open`·브라우저 직접 실행 대신 `artifact-open <파일경로>` 를 쓴다.\n- 백그라운드 탭으로 열려 사용자가 보던 화면을 가리지 않는다.\n- 같은 파일을 다시 열면 새 탭 대신 기존 탭이 새로고침된다. 파일을 고친 뒤에는 같은 경로로 다시 실행한다.\n- 여러 파일은 `artifact-open a.html b.html`. 사용자가 바로 봐야 할 때만 `artifact-open -f <파일>`.\n- 연결 확인은 `artifact-open --status`. 명령이 실패하면 다른 방법으로 열지 말고, 파일 경로와 함께 사용자에게 알린다."
+  },
+  "welcomeDocTitle": {
+    "message": "Artifact Dock 시작하기"
+  },
+  "welcomeTitle": {
+    "message": "Artifact Dock 준비하기"
+  },
+  "welcomeLead": {
+    "message": "에이전트가 만든 HTML 리포트를 포커스 뺏김 없이, 문서마다 탭 하나로 모읍니다. 아래 단계는 완료되면 자동으로 체크됩니다."
+  },
+  "stateDone": {
+    "message": "완료"
+  },
+  "stateTodo": {
+    "message": "필요"
+  },
+  "stateWaiting": {
+    "message": "연결 대기"
+  },
+  "stateOptional": {
+    "message": "선택"
+  },
+  "step1Title": {
+    "message": "확장 설치"
+  },
+  "step1Desc": {
+    "message": "툴바 아이콘이나 ⌘⇧U 로 사이드바를 엽니다. 툴바에 고정해 두면 찾기 쉽습니다."
+  },
+  "step2Title": {
+    "message": "파일 URL 접근 허용"
+  },
+  "step2Desc": {
+    "message": "로컬 HTML(file://)을 다루려면 필요합니다. 확장 상세 화면에서 「파일 URL에 대한 액세스 허용」을 켜세요."
+  },
+  "step2Btn": {
+    "message": "확장 설정 열기"
+  },
+  "step3Title": {
+    "message": "CLI 연결 (macOS)"
+  },
+  "step3Desc": {
+    "message": "터미널에서 아래 명령을 한 번 실행하면 artifact-open 명령과 연결 프로그램이 설치됩니다. 설치하면 몇 초 안에 이 칸이 자동으로 바뀝니다."
+  },
+  "step3Hint": {
+    "message": "이미 설치했는데 대기 중이면 chrome://extensions 에서 확장을 껐다 켜세요."
+  },
+  "step4Title": {
+    "message": "에이전트에게 알려주기"
+  },
+  "step4Desc": {
+    "message": "아래 프롬프트를 Claude Code·Codex 대화에 붙여넣거나 CLAUDE.md / AGENTS.md 에 넣으면, 에이전트가 HTML 을 열 때 artifact-open 을 씁니다."
+  },
+  "copy": {
+    "message": "복사"
+  },
+  "copied": {
+    "message": "복사됨"
+  },
+  "allReady": {
+    "message": "준비 완료 — 이제 에이전트가 여는 리포트가 사이드바에 모입니다."
+  },
+  "notReady": {
+    "message": "남은 단계를 마치면 여기에 준비 완료가 표시됩니다."
+  },
+  "privacyNote": {
+    "message": "이 확장은 데이터를 수집하거나 외부로 보내지 않습니다."
+  },
+  "privacyLink": {
+    "message": "개인정보 처리방침"
+  },
+  "optionsDocTitle": {
+    "message": "Artifact Dock 설정"
+  },
+  "optLead": {
+    "message": "로컬 HTML·아티팩트 탭을 하나로 묶습니다. 값을 바꾸면 바로 저장됩니다."
+  },
+  "optSaved": {
+    "message": "저장됨"
+  },
+  "optSetupLink": {
+    "message": "설치 안내 다시 보기"
+  },
+  "optSecDup": {
+    "message": "중복 탭"
+  },
+  "optDedupe": {
+    "message": "같은 문서면 탭 하나만 유지"
+  },
+  "optDedupeDesc": {
+    "message": "이미 열린 문서를 또 열면 기존 탭을 재사용하고 새 탭은 닫습니다."
+  },
+  "optMatch": {
+    "message": "같은 문서 판정 기준"
+  },
+  "optMatchDesc": {
+    "message": "<b>전체 경로</b> 같은 파일일 때만 합침 · <b>파일 이름만</b> <code>/a/report.html</code> 과 <code>/b/report.html</code> 도 합침 · <b>문서 제목</b> 파일명이 달라도 <code>&lt;title&gt;</code> 이 같으면 합침(제목이 붙기 전에는 경로로 판정하므로 [정리] 버튼에서 주로 효과가 납니다)"
+  },
+  "optMatchPath": {
+    "message": "전체 경로 (안전)"
+  },
+  "optMatchFilename": {
+    "message": "파일 이름만"
+  },
+  "optMatchTitle": {
+    "message": "문서 제목"
+  },
+  "optReload": {
+    "message": "재사용할 때 새로고침"
+  },
+  "optReloadDesc": {
+    "message": "에이전트가 같은 파일을 다시 썼을 테니 기본은 켜둡니다."
+  },
+  "optSecFocus": {
+    "message": "포커스"
+  },
+  "optFocusGuard": {
+    "message": "외부에서 열린 탭에 포커스를 주지 않기"
+  },
+  "optFocusGuardDesc": {
+    "message": "터미널에서 연 탭이면 직전에 보던 탭으로 되돌립니다. 페이지 안에서 링크로 연 탭은 건드리지 않습니다."
+  },
+  "optSecGroup": {
+    "message": "탭 그룹"
+  },
+  "optAutoGroup": {
+    "message": "아티팩트 탭을 그룹으로 묶기"
+  },
+  "optAutoGroupDesc": {
+    "message": "탭바에서 한 덩어리로 모여 자리를 덜 차지합니다."
+  },
+  "optGroupTitle": {
+    "message": "그룹 이름"
+  },
+  "optGroupColor": {
+    "message": "그룹 색"
+  },
+  "optViewMode": {
+    "message": "사이드바에서 문서를 볼 때"
+  },
+  "optViewModeDesc": {
+    "message": "<b>한 개만 꺼내기</b> 볼 탭만 그룹 밖으로 빼서 보여줍니다 — 나머지는 접힌 채 그대로 (권장) · <b>그룹 펼치기</b> 평범하게 활성화합니다. 그룹이 펼쳐지고, 다른 탭으로 나가면 다시 접힙니다"
+  },
+  "optViewSolo": {
+    "message": "한 개만 꺼내기"
+  },
+  "optViewExpand": {
+    "message": "그룹 펼치기"
+  },
+  "optCollapse": {
+    "message": "그룹을 접어두기"
+  },
+  "optCollapseDesc": {
+    "message": "탭바를 최대한 아끼려면 켜세요. 사이드바에서 골라 여는 사용에 맞습니다."
+  },
+  "optSweepOnStart": {
+    "message": "브라우저를 켤 때 중복 탭 자동 정리"
+  },
+  "optSweepOnStartDesc": {
+    "message": "꺼두면 사이드바의 [정리] 버튼을 누를 때만 정리합니다."
+  },
+  "optMaxTabs": {
+    "message": "아티팩트 탭 최대 개수"
+  },
+  "optMaxTabsDesc": {
+    "message": "0 이면 제한 없음. 넘으면 오래 안 본 것부터 닫습니다 — 목록에는 남아서 클릭 한 번으로 되살아납니다(고정한 문서와 보고 있는 탭은 제외)."
+  },
+  "optSecTarget": {
+    "message": "대상"
+  },
+  "optTrackClaude": {
+    "message": "claude.ai 아티팩트도 관리"
+  },
+  "optTrackClaudeDesc": {
+    "message": "끄면 로컬 <code>file://</code> HTML 만 다룹니다."
+  }
+}

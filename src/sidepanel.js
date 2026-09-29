@@ -4,12 +4,17 @@
 
 import { getConfig } from './lib/config.js';
 import { artifactKey, displayName, subLabel } from './lib/keys.js';
+import { t, applyI18n, copyAgentPrompt } from './lib/i18n.js';
+
+applyI18n();
 
 const listEl = document.getElementById('list');
 const qEl = document.getElementById('q');
 const countEl = document.getElementById('count');
 
 let filter = '';
+// CLI(네이티브 호스트) 연결 여부. 모르는 동안은 연결된 것으로 두어 경고가 깜빡이지 않게 한다.
+let hostReady = true;
 
 async function collect() {
   const cfg = await getConfig();
@@ -96,13 +101,13 @@ function makeRow(item) {
   }
 
   const meta = el('div', 'meta');
-  meta.append(el('div', 'name', item.title || '(제목 없음)'));
+  meta.append(el('div', 'name', item.title || t('untitled')));
   meta.append(el('div', 'sub', shortenPath(item.sub || '')));
   row.append(meta);
 
   if (item.dupes?.length) {
     const badge = el('span', 'badge', `×${item.dupes.length + 1}`);
-    badge.title = `같은 문서 탭 ${item.dupes.length + 1}개 — 눌러서 중복 닫기`;
+    badge.title = t('dupBadgeTitle', item.dupes.length + 1);
     badge.addEventListener('click', async (e) => {
       e.stopPropagation();
       await chrome.tabs.remove(item.dupes);
@@ -113,22 +118,22 @@ function makeRow(item) {
 
   const actions = el('div', 'actions');
   actions.append(
-    iconBtn(item.pinned ? '📌' : '📍', item.pinned ? '고정 해제' : '목록에 고정', async (e) => {
+    iconBtn(item.pinned ? '📌' : '📍', item.pinned ? t('unpin') : t('pin'), async (e) => {
       e.stopPropagation();
       await togglePin(item);
     }, item.pinned ? 'pinned' : '')
   );
   if (!item.closed) {
-    actions.append(iconBtn('⟳', '새로고침', (e) => {
+    actions.append(iconBtn('⟳', t('reload'), (e) => {
       e.stopPropagation();
       chrome.tabs.reload(item.tabId);
     }));
-    actions.append(iconBtn('✕', '탭 닫기', (e) => {
+    actions.append(iconBtn('✕', t('closeTab'), (e) => {
       e.stopPropagation();
       chrome.tabs.remove(item.tabId).then(render);
     }));
   } else {
-    actions.append(iconBtn('✕', '기록에서 지우기', async (e) => {
+    actions.append(iconBtn('✕', t('removeHistory'), async (e) => {
       e.stopPropagation();
       await removeHistory(item.key);
     }));
@@ -200,18 +205,24 @@ async function render() {
 
   if (!shownOpen.length && !shownClosed.length) {
     const e = el('div', 'empty');
-    e.append(
-      el('div', null, filter ? '검색 결과가 없습니다.' : '열린 아티팩트가 없습니다.'),
-      el('div', 'muted', filter ? '' : '터미널에서 artifact-open 으로 HTML 을 열어보세요.')
-    );
+    if (filter) {
+      e.append(el('div', null, t('noResults')));
+    } else if (hostReady) {
+      e.append(el('div', null, t('emptyTitle')), el('div', 'muted', t('emptyHintCli')));
+    } else {
+      // CLI 가 없으면 "artifact-open 으로 열어보세요" 는 따라 할 수 없는 안내다. 설치 안내로 보낸다.
+      const btn = el('button', 'primary', t('openSetup'));
+      btn.addEventListener('click', openWelcome);
+      e.append(el('div', null, t('emptyTitle')), el('div', 'muted', t('emptyHintSetup')), btn);
+    }
     listEl.append(e);
   } else {
     if (shownOpen.length) {
-      listEl.append(el('div', 'section', `열림 ${shownOpen.length}`));
+      listEl.append(el('div', 'section', t('sectionOpen', shownOpen.length)));
       shownOpen.forEach((i) => listEl.append(makeRow(i)));
     }
     if (shownClosed.length) {
-      listEl.append(el('div', 'section', '최근 닫힘'));
+      listEl.append(el('div', 'section', t('sectionClosed')));
       shownClosed.forEach((i) => listEl.append(makeRow(i)));
     }
   }
@@ -220,10 +231,10 @@ async function render() {
   const cfg = await getConfig();
   // 버전과 모드를 같이 보여준다 — 확장을 다시 로드했는지, 어떤 모드로 도는지
   // 물어보지 않고 바로 확인할 수 있어야 진단이 빨라진다.
-  const mode = cfg.viewMode === 'solo' ? '한 개만' : '펼침';
-  const base = dupTotal ? `${open.length}개 문서 · 중복 ${dupTotal}` : `${open.length}개 열림`;
+  const mode = cfg.viewMode === 'solo' ? t('modeSolo') : t('modeExpand');
+  const base = dupTotal ? t('countDocsDup', open.length, dupTotal) : t('countOpen', open.length);
   countEl.textContent = `${base} · ${mode} · v${chrome.runtime.getManifest().version}`;
-  countEl.title = '설정을 열려면 ⚙ 를 누르세요';
+  countEl.title = t('countTitle');
 }
 
 // ── 이벤트 배선 ──────────────────────────────────────────────
@@ -254,11 +265,11 @@ document.getElementById('sweep').addEventListener('click', async (e) => {
     const res = await chrome.runtime.sendMessage({ type: 'dock:sweep' });
     showToast(
       res?.closed
-        ? `중복 ${res.closed}개 탭을 닫고 ${res.grouped}개를 그룹으로 모았습니다`
-        : `중복 없음 · ${res?.grouped ?? 0}개를 그룹으로 모았습니다`
+        ? t('toastSweepClosed', res.closed, res.grouped)
+        : t('toastSweepNone', res?.grouped ?? 0)
     );
   } catch {
-    showToast('정리에 실패했습니다 (확장을 껐다 켜보세요)');
+    showToast(t('toastSweepFail'));
   } finally {
     btn.disabled = false;
     render();
@@ -276,11 +287,41 @@ document.getElementById('closeAll').addEventListener('click', async () => {
 // 백그라운드가 알려주는 변화 + 브라우저 이벤트 양쪽을 듣는다.
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg?.type === 'dock:refresh') render();
+  if (msg?.type === 'dock:hostStatus') setHostStatus(msg.ready);
 });
 chrome.tabs.onActivated.addListener(render);
 chrome.tabs.onRemoved.addListener(render);
 chrome.tabs.onUpdated.addListener((_id, info) => {
   if (info.title || info.favIconUrl || info.status === 'complete') render();
 });
+
+// ── CLI 연결 상태 ─────────────────────────────────────────────
+// 연결이 끊긴 상태는 콘솔에만 찍히던 것이라, 사용자는 "왜 안 열리지"만 보게 된다. 화면에 올린다.
+const hostEl = document.getElementById('hostStatus');
+
+function setHostStatus(ready) {
+  const changed = hostReady !== ready;
+  hostReady = ready;
+  hostEl.hidden = false;
+  hostEl.className = 'host-status ' + (ready ? 'ok' : 'warn');
+  hostEl.textContent = ready ? `● ${t('statusConnected')}` : `● ${t('statusDisconnected')} · ${t('openSetup')}`;
+  hostEl.title = ready ? t('statusConnectedTitle') : t('statusDisconnectedTitle');
+  hostEl.disabled = ready;
+  if (changed) render();
+}
+
+function openWelcome() {
+  chrome.tabs.create({ url: chrome.runtime.getURL('src/welcome.html'), active: true });
+}
+
+hostEl.addEventListener('click', openWelcome);
+
+document.getElementById('agentPrompt').addEventListener('click', async () => {
+  showToast((await copyAgentPrompt()) ? t('toastPromptCopied') : t('toastCopyFail'));
+});
+
+chrome.runtime.sendMessage({ type: 'dock:status' })
+  .then((res) => setHostStatus(!!res?.hostReady))
+  .catch(() => setHostStatus(false));
 
 render();

@@ -1,5 +1,8 @@
 // 설정 화면. 필드 id 를 설정 키와 똑같이 맞춰서 반복문 하나로 처리한다.
 import { DEFAULTS, getConfig, setConfig } from './lib/config.js';
+import { applyI18n } from './lib/i18n.js';
+
+applyI18n();
 
 const KEYS = [
   'dedupe', 'matchMode', 'reloadOnDuplicate', 'sweepOnStart',

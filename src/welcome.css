@@ -1,0 +1,49 @@
+body { display: block; height: auto; min-height: 100vh; font-size: 14px; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 40px 24px 56px; }
+.hero { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px; }
+.hero img { border-radius: 12px; flex: 0 0 auto; }
+h1 { font-size: 24px; margin: 2px 0 6px; }
+.lead { margin: 0; color: var(--muted); line-height: 1.6; }
+
+.summary { border-radius: 10px; padding: 11px 14px; margin: 0 0 18px; font-weight: 600; }
+.summary.ok { background: #ecfdf5; color: #047857; }
+.summary.pending { background: var(--hover); color: var(--muted); font-weight: 500; }
+
+.steps { list-style: none; margin: 0; padding: 0; }
+.step { display: flex; gap: 14px; padding: 16px 0; border-top: 1px solid var(--line); }
+.dot { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; margin-top: 2px;
+  border: 2px solid var(--line); display: grid; place-items: center; font-size: 12px; color: #fff; }
+.step[data-state="done"] .dot { background: #16a34a; border-color: #16a34a; }
+.step[data-state="done"] .dot::after { content: "✓"; }
+.step[data-state="todo"] .dot { border-color: #f59e0b; }
+.step[data-state="waiting"] .dot { border-color: var(--accent); border-top-color: transparent; animation: spin 1s linear infinite; }
+.step[data-state="optional"] .dot { border-style: dashed; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.body { flex: 1; min-width: 0; }
+.head { display: flex; align-items: center; gap: 10px; }
+.head h2 { font-size: 15px; margin: 0; }
+.state { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--hover); color: var(--muted); }
+.step[data-state="done"] .state { background: #dcfce7; color: #15803d; }
+.step[data-state="todo"] .state { background: #fef3c7; color: #b45309; }
+.step[data-state="waiting"] .state { background: var(--accent-soft); color: var(--accent); }
+.body p { margin: 6px 0 0; color: var(--muted); line-height: 1.6; }
+.body .hint { font-size: 12px; }
+.step[data-state="done"] .primary, .step[data-state="done"] .hint { display: none; }
+
+.code, .prompt { position: relative; margin-top: 10px; }
+.code { display: flex; align-items: center; gap: 8px; background: #0f172a; border-radius: 8px; padding: 10px 10px 10px 14px; }
+/* 설치 명령은 복사 전에 눈으로 확인할 수 있어야 해서 자르지 않고 줄바꿈한다 */
+.code code { flex: 1; min-width: 0; color: #e2e8f0; font: 12.5px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-all; }
+.code .copy { flex: 0 0 auto; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+.prompt pre { margin: 0; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--hover);
+  font: 12.5px/1.6 ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-word; }
+.prompt .copy { margin-top: 8px; }
+
+.foot-note { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.foot-note a { color: var(--accent); }
+@media (prefers-color-scheme: dark) {
+  .summary.ok { background: #052e1c; color: #4ade80; }
+  .step[data-state="done"] .state { background: #14532d; color: #86efac; }
+  .step[data-state="todo"] .state { background: #422006; color: #fbbf24; }
+}

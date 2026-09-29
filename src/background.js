@@ -287,6 +287,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     focusTab(msg.tabId).then(sendResponse);
     return true;
   }
+  if (msg?.type === 'dock:status') {
+    // 설치 안내 화면이 주기적으로 묻는다. 끊겨 있으면 이때 다시 붙여 본다 —
+    // install.sh 를 막 실행한 사람이 1분(keepalive)을 기다리지 않게.
+    // 서비스 워커가 막 깨어난 직후엔 host:ready 가 오기 전이라 잠깐 "미연결"로 보인다.
+    // 짧게 기다렸다 답해서 사이드바 경고가 깜빡이지 않게 한다.
+    connectHost();
+    waitHostReady(HOST_READY_WAIT_MS).then((ready) => sendResponse({ hostReady: ready }));
+    return true;
+  }
   if (msg?.type === 'dock:sweep') {
     sweepAll().then(sendResponse);
     return true;
@@ -301,8 +310,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 });
 
 // 툴바 아이콘을 누르면 사이드바가 열리게 한다.
-chrome.runtime.onInstalled.addListener(() => {
+// 처음 설치했을 때만 설치 안내를 연다. 스토어로 깐 사람은 CLI·파일 접근 설정이 필요하다는 걸
+// 알 방법이 없어서, 안내가 없으면 "깔았는데 아무것도 안 된다"에서 멈춘다.
+chrome.runtime.onInstalled.addListener(({ reason }) => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.warn);
+  if (reason === chrome.runtime.OnInstalledReason.INSTALL) {
+    chrome.tabs.create({ url: chrome.runtime.getURL('src/welcome.html'), active: true }).catch(console.warn);
+  }
 });
 chrome.runtime.onStartup.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.warn);
@@ -319,6 +333,25 @@ chrome.runtime.onStartup.addListener(() => {
 
 const HOST_NAME = 'dev.artifactdock.host';
 let nativePort = null;
+// connectNative() 는 호스트가 없어도 포트를 돌려준다. 그래서 "연결됨"은 호스트가 보낸
+// host:ready 를 받았을 때만 참이다.
+let hostReady = false;
+
+const HOST_READY_WAIT_MS = 800;
+
+async function waitHostReady(ms) {
+  const until = Date.now() + ms;
+  while (!hostReady && nativePort && Date.now() < until) {
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return hostReady;
+}
+
+function setHostReady(ready) {
+  if (hostReady === ready) return;
+  hostReady = ready;
+  chrome.runtime.sendMessage({ type: 'dock:hostStatus', ready }).catch(() => {});
+}
 
 // 확장이 스스로 만든 탭은 onCreated 에서 다시 손대지 않도록 표시해 둔다.
 const selfCreated = new Set();
@@ -334,7 +367,8 @@ function connectHost() {
   }
 
   nativePort.onMessage.addListener(async (msg) => {
-    if (!msg || msg.type === 'host:ready') return;
+    if (msg?.type === 'host:ready') { setHostReady(true); return; }
+    if (!msg) return;
     if (msg.cmd !== 'open') return;
     let reply;
     try {
@@ -349,6 +383,7 @@ function connectHost() {
     const err = chrome.runtime.lastError?.message;
     if (err) console.warn('[ArtifactDock] native host 끊김:', err);
     nativePort = null;
+    setHostReady(false);
   });
 }
 

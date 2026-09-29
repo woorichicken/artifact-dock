@@ -5,6 +5,7 @@
 set -e
 cd "$(dirname "$0")"
 echo "── dedup 키 규칙"; node tests/keys.test.mjs
+echo; echo "── 다국어"; node tests/i18n.test.mjs
 echo; echo "── CLI ↔ 네이티브 호스트"; python3 tests/host.test.py
 echo; echo "── HTML 직접 열기 차단"; python3 tests/open_guard.test.py
 echo; echo "전부 통과"

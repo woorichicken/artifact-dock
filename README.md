@@ -54,6 +54,14 @@ artifact-open --status     # "확장 연결: 살아있음" 이면 끝
 
 > `--status` 가 "없음"이면 확장을 껐다 켜세요. 네이티브 호스트는 확장이 켜질 때 실행됩니다.
 
+## 처음 설치하면
+
+설치 직후 **설치 안내 탭**이 열린다. 파일 URL 접근·CLI 연결을 브라우저에 직접 물어 완료 여부를 표시하고,
+에이전트에게 붙여넣을 프롬프트를 복사할 수 있다. 사이드바의 🤖 로도 같은 프롬프트를 복사한다.
+닫은 뒤에는 설정 맨 위 「설치 안내 다시 보기」.
+
+화면 언어는 브라우저 언어를 따른다 — 한국어·English·Español, 그 외는 영어. 문구 원본은 `_locales/<lang>/messages.json`.
+
 ## 사용
 
 ```bash
@@ -184,6 +192,7 @@ run-tests.sh             확장 없이 돌릴 수 있는 검증
 ./run-tests.sh
 ```
 
+- `tests/i18n.test.mjs` — 언어별 키·치환자 일치, 코드가 쓰는 키 존재, en/es 에 한글 잔존 없음, 스토어 글자 수 제한
 - `tests/keys.test.mjs` — dedup 키 규칙 14케이스 (쿼리 무시, 파일명 모드, 한글/공백, 비대상 판정)
 - `tests/host.test.py` — 호스트를 Chrome 인 척 띄워 CLI→호스트→확장 왕복 실측
 - `tests/open_guard.test.py` — Node/셸 HTML 라우팅, 실패 시 직접 열기 금지, CLI 설치 충돌 검사

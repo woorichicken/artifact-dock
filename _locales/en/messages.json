@@ -1,0 +1,332 @@
+{
+  "extName": {
+    "message": "Artifact Dock"
+  },
+  "extDescription": {
+    "message": "Manage local HTML and Claude artifact tabs in one side panel. No duplicate tabs, no stolen focus."
+  },
+  "actionTitle": {
+    "message": "Open Artifact Dock"
+  },
+  "commandToggle": {
+    "message": "Toggle the Artifact Dock side panel"
+  },
+  "searchPlaceholder": {
+    "message": "Search documents"
+  },
+  "settingsTitle": {
+    "message": "Settings"
+  },
+  "sweep": {
+    "message": "Tidy up"
+  },
+  "sweepTitle": {
+    "message": "Close duplicate tabs of the same document and gather them into a group"
+  },
+  "closeAll": {
+    "message": "Close tabs"
+  },
+  "closeAllTitle": {
+    "message": "Closes the tabs only. They stay under 'Recently closed' and reopen with one click"
+  },
+  "untitled": {
+    "message": "(Untitled)"
+  },
+  "dupBadgeTitle": {
+    "message": "$ARG1$ tabs of the same document — click to close duplicates",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pin": {
+    "message": "Pin to list"
+  },
+  "unpin": {
+    "message": "Unpin"
+  },
+  "reload": {
+    "message": "Reload"
+  },
+  "closeTab": {
+    "message": "Close tab"
+  },
+  "removeHistory": {
+    "message": "Remove from history"
+  },
+  "noResults": {
+    "message": "No results."
+  },
+  "emptyTitle": {
+    "message": "No artifacts open."
+  },
+  "emptyHintCli": {
+    "message": "Open an HTML file from the terminal with artifact-open."
+  },
+  "emptyHintSetup": {
+    "message": "The CLI isn't connected yet. Follow the setup guide once to connect it."
+  },
+  "openSetup": {
+    "message": "Open setup guide"
+  },
+  "sectionOpen": {
+    "message": "Open $ARG1$",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "sectionClosed": {
+    "message": "Recently closed"
+  },
+  "modeSolo": {
+    "message": "solo"
+  },
+  "modeExpand": {
+    "message": "expanded"
+  },
+  "countDocsDup": {
+    "message": "$ARG1$ docs · $ARG2$ duplicates",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      },
+      "arg2": {
+        "content": "$2"
+      }
+    }
+  },
+  "countOpen": {
+    "message": "$ARG1$ open",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "countTitle": {
+    "message": "Click ⚙ to open settings"
+  },
+  "toastSweepClosed": {
+    "message": "Closed $ARG1$ duplicate tabs and grouped $ARG2$",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      },
+      "arg2": {
+        "content": "$2"
+      }
+    }
+  },
+  "toastSweepNone": {
+    "message": "No duplicates · grouped $ARG1$",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastSweepFail": {
+    "message": "Tidy-up failed (try turning the extension off and on)"
+  },
+  "statusConnected": {
+    "message": "CLI connected"
+  },
+  "statusDisconnected": {
+    "message": "CLI not connected"
+  },
+  "statusConnectedTitle": {
+    "message": "Files opened with artifact-open appear as background tabs"
+  },
+  "statusDisconnectedTitle": {
+    "message": "Click to see the setup guide"
+  },
+  "agentPromptBtn": {
+    "message": "Copy agent prompt"
+  },
+  "toastPromptCopied": {
+    "message": "Agent prompt copied. Paste it into your chat or CLAUDE.md"
+  },
+  "toastCopyFail": {
+    "message": "Couldn't copy"
+  },
+  "agentPrompt": {
+    "message": "Artifact Dock is installed on this computer. When you open HTML output (reports, previews, docs) in the browser, use `artifact-open <file path>` instead of `open`, `xdg-open`, or launching the browser directly.\n- It opens in a background tab, so it never covers what the user is looking at.\n- Opening the same file again reloads the existing tab instead of adding a new one. After editing a file, run it again with the same path.\n- Multiple files: `artifact-open a.html b.html`. Use `artifact-open -f <file>` only when the user needs to see it right away.\n- Check the connection with `artifact-open --status`. If the command fails, do not fall back to another opener — tell the user and include the file path."
+  },
+  "welcomeDocTitle": {
+    "message": "Get started with Artifact Dock"
+  },
+  "welcomeTitle": {
+    "message": "Set up Artifact Dock"
+  },
+  "welcomeLead": {
+    "message": "Keeps agent-made HTML reports to one tab per document, without stealing your focus. Each step below checks itself off when it's done."
+  },
+  "stateDone": {
+    "message": "Done"
+  },
+  "stateTodo": {
+    "message": "To do"
+  },
+  "stateWaiting": {
+    "message": "Waiting"
+  },
+  "stateOptional": {
+    "message": "Optional"
+  },
+  "step1Title": {
+    "message": "Install the extension"
+  },
+  "step1Desc": {
+    "message": "Open the side panel from the toolbar icon or ⌘⇧U. Pin it to the toolbar to find it easily."
+  },
+  "step2Title": {
+    "message": "Allow access to file URLs"
+  },
+  "step2Desc": {
+    "message": "Needed for local HTML (file://). Turn on \"Allow access to file URLs\" on the extension's details page."
+  },
+  "step2Btn": {
+    "message": "Open extension settings"
+  },
+  "step3Title": {
+    "message": "Connect the CLI (macOS)"
+  },
+  "step3Desc": {
+    "message": "Run this once in the terminal to install the artifact-open command and its connector. This step updates on its own a few seconds after install."
+  },
+  "step3Hint": {
+    "message": "Already installed but still waiting? Turn the extension off and on in chrome://extensions."
+  },
+  "step4Title": {
+    "message": "Tell your agent"
+  },
+  "step4Desc": {
+    "message": "Paste this prompt into a Claude Code or Codex chat, or add it to CLAUDE.md / AGENTS.md, so your agent uses artifact-open to open HTML."
+  },
+  "copy": {
+    "message": "Copy"
+  },
+  "copied": {
+    "message": "Copied"
+  },
+  "allReady": {
+    "message": "All set — reports your agent opens will now gather in the side panel."
+  },
+  "notReady": {
+    "message": "Finish the remaining steps and this will show as ready."
+  },
+  "privacyNote": {
+    "message": "This extension collects no data and sends nothing off your device."
+  },
+  "privacyLink": {
+    "message": "Privacy policy"
+  },
+  "optionsDocTitle": {
+    "message": "Artifact Dock settings"
+  },
+  "optLead": {
+    "message": "Groups local HTML and artifact tabs. Changes are saved instantly."
+  },
+  "optSaved": {
+    "message": "Saved"
+  },
+  "optSetupLink": {
+    "message": "Show the setup guide again"
+  },
+  "optSecDup": {
+    "message": "Duplicate tabs"
+  },
+  "optDedupe": {
+    "message": "Keep one tab per document"
+  },
+  "optDedupeDesc": {
+    "message": "Opening a document that's already open reuses its tab and closes the new one."
+  },
+  "optMatch": {
+    "message": "What counts as the same document"
+  },
+  "optMatchDesc": {
+    "message": "<b>Full path</b> merges only the same file · <b>File name only</b> also merges <code>/a/report.html</code> and <code>/b/report.html</code> · <b>Document title</b> merges different files with the same <code>&lt;title&gt;</code> (before the title loads the path is used, so it mostly helps with the Tidy up button)"
+  },
+  "optMatchPath": {
+    "message": "Full path (safe)"
+  },
+  "optMatchFilename": {
+    "message": "File name only"
+  },
+  "optMatchTitle": {
+    "message": "Document title"
+  },
+  "optReload": {
+    "message": "Reload when reusing a tab"
+  },
+  "optReloadDesc": {
+    "message": "On by default, since the agent has probably rewritten the file."
+  },
+  "optSecFocus": {
+    "message": "Focus"
+  },
+  "optFocusGuard": {
+    "message": "Don't focus tabs opened from outside"
+  },
+  "optFocusGuardDesc": {
+    "message": "If a tab was opened from the terminal, switches back to the tab you were on. Links opened from a page are left alone."
+  },
+  "optSecGroup": {
+    "message": "Tab group"
+  },
+  "optAutoGroup": {
+    "message": "Put artifact tabs in a group"
+  },
+  "optAutoGroupDesc": {
+    "message": "They sit together in the tab bar and take less space."
+  },
+  "optGroupTitle": {
+    "message": "Group name"
+  },
+  "optGroupColor": {
+    "message": "Group color"
+  },
+  "optViewMode": {
+    "message": "When viewing from the side panel"
+  },
+  "optViewModeDesc": {
+    "message": "<b>Pull out one</b> moves only that tab out of the group; the rest stay collapsed (recommended) · <b>Expand group</b> activates it normally; the group expands and collapses again when you leave"
+  },
+  "optViewSolo": {
+    "message": "Pull out one"
+  },
+  "optViewExpand": {
+    "message": "Expand group"
+  },
+  "optCollapse": {
+    "message": "Keep the group collapsed"
+  },
+  "optCollapseDesc": {
+    "message": "Turn on to save tab bar space. Works best when you pick documents from the side panel."
+  },
+  "optSweepOnStart": {
+    "message": "Tidy up duplicates when the browser starts"
+  },
+  "optSweepOnStartDesc": {
+    "message": "When off, tidying happens only when you click Tidy up in the side panel."
+  },
+  "optMaxTabs": {
+    "message": "Maximum artifact tabs"
+  },
+  "optMaxTabsDesc": {
+    "message": "0 means no limit. Beyond it, the least recently viewed close first — they stay in the list and reopen with one click (pinned and current tabs are kept)."
+  },
+  "optSecTarget": {
+    "message": "What to manage"
+  },
+  "optTrackClaude": {
+    "message": "Also manage claude.ai artifacts"
+  },
+  "optTrackClaudeDesc": {
+    "message": "When off, only local <code>file://</code> HTML is managed."
+  }
+}

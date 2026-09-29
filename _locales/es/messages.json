@@ -1,0 +1,332 @@
+{
+  "extName": {
+    "message": "Artifact Dock"
+  },
+  "extDescription": {
+    "message": "Gestiona las pestañas de HTML local y artefactos de Claude en un panel lateral. Sin duplicados ni robo de foco."
+  },
+  "actionTitle": {
+    "message": "Abrir Artifact Dock"
+  },
+  "commandToggle": {
+    "message": "Mostrar u ocultar el panel de Artifact Dock"
+  },
+  "searchPlaceholder": {
+    "message": "Buscar documentos"
+  },
+  "settingsTitle": {
+    "message": "Ajustes"
+  },
+  "sweep": {
+    "message": "Ordenar"
+  },
+  "sweepTitle": {
+    "message": "Cierra las pestañas duplicadas del mismo documento y las agrupa"
+  },
+  "closeAll": {
+    "message": "Cerrar pestañas"
+  },
+  "closeAllTitle": {
+    "message": "Solo cierra las pestañas. Quedan en 'Cerradas recientemente' y se reabren con un clic"
+  },
+  "untitled": {
+    "message": "(Sin título)"
+  },
+  "dupBadgeTitle": {
+    "message": "$ARG1$ pestañas del mismo documento — haz clic para cerrar duplicados",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pin": {
+    "message": "Fijar en la lista"
+  },
+  "unpin": {
+    "message": "Desfijar"
+  },
+  "reload": {
+    "message": "Recargar"
+  },
+  "closeTab": {
+    "message": "Cerrar pestaña"
+  },
+  "removeHistory": {
+    "message": "Quitar del historial"
+  },
+  "noResults": {
+    "message": "Sin resultados."
+  },
+  "emptyTitle": {
+    "message": "No hay artefactos abiertos."
+  },
+  "emptyHintCli": {
+    "message": "Abre un HTML desde la terminal con artifact-open."
+  },
+  "emptyHintSetup": {
+    "message": "La CLI aún no está conectada. Sigue la guía de instalación una vez para conectarla."
+  },
+  "openSetup": {
+    "message": "Abrir guía de instalación"
+  },
+  "sectionOpen": {
+    "message": "Abiertas $ARG1$",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "sectionClosed": {
+    "message": "Cerradas recientemente"
+  },
+  "modeSolo": {
+    "message": "solo"
+  },
+  "modeExpand": {
+    "message": "expandido"
+  },
+  "countDocsDup": {
+    "message": "$ARG1$ docs · $ARG2$ duplicados",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      },
+      "arg2": {
+        "content": "$2"
+      }
+    }
+  },
+  "countOpen": {
+    "message": "$ARG1$ abiertas",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "countTitle": {
+    "message": "Haz clic en ⚙ para abrir los ajustes"
+  },
+  "toastSweepClosed": {
+    "message": "Se cerraron $ARG1$ duplicadas y se agruparon $ARG2$",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      },
+      "arg2": {
+        "content": "$2"
+      }
+    }
+  },
+  "toastSweepNone": {
+    "message": "Sin duplicados · se agruparon $ARG1$",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastSweepFail": {
+    "message": "No se pudo ordenar (prueba a desactivar y activar la extensión)"
+  },
+  "statusConnected": {
+    "message": "CLI conectada"
+  },
+  "statusDisconnected": {
+    "message": "CLI no conectada"
+  },
+  "statusConnectedTitle": {
+    "message": "Los archivos abiertos con artifact-open aparecen en pestañas de fondo"
+  },
+  "statusDisconnectedTitle": {
+    "message": "Haz clic para ver la guía de instalación"
+  },
+  "agentPromptBtn": {
+    "message": "Copiar prompt para el agente"
+  },
+  "toastPromptCopied": {
+    "message": "Prompt copiado. Pégalo en el chat o en CLAUDE.md"
+  },
+  "toastCopyFail": {
+    "message": "No se pudo copiar"
+  },
+  "agentPrompt": {
+    "message": "Artifact Dock está instalado en este equipo. Para abrir resultados HTML (informes, vistas previas, documentos) en el navegador, usa `artifact-open <ruta del archivo>` en lugar de `open`, `xdg-open` o abrir el navegador directamente.\n- Se abre en una pestaña de fondo, así que nunca tapa lo que el usuario está viendo.\n- Si vuelves a abrir el mismo archivo, se recarga la pestaña existente en vez de crear otra. Después de editar un archivo, vuelve a ejecutarlo con la misma ruta.\n- Varios archivos: `artifact-open a.html b.html`. Usa `artifact-open -f <archivo>` solo cuando el usuario deba verlo de inmediato.\n- Comprueba la conexión con `artifact-open --status`. Si el comando falla, no uses otro método para abrirlo: avisa al usuario e incluye la ruta del archivo."
+  },
+  "welcomeDocTitle": {
+    "message": "Empieza con Artifact Dock"
+  },
+  "welcomeTitle": {
+    "message": "Configura Artifact Dock"
+  },
+  "welcomeLead": {
+    "message": "Reúne los informes HTML de tu agente en una pestaña por documento, sin robarte el foco. Cada paso se marca solo al completarse."
+  },
+  "stateDone": {
+    "message": "Listo"
+  },
+  "stateTodo": {
+    "message": "Pendiente"
+  },
+  "stateWaiting": {
+    "message": "Esperando"
+  },
+  "stateOptional": {
+    "message": "Opcional"
+  },
+  "step1Title": {
+    "message": "Instalar la extensión"
+  },
+  "step1Desc": {
+    "message": "Abre el panel lateral con el icono de la barra o ⌘⇧U. Fíjalo en la barra para encontrarlo fácilmente."
+  },
+  "step2Title": {
+    "message": "Permitir acceso a URL de archivo"
+  },
+  "step2Desc": {
+    "message": "Necesario para HTML local (file://). Activa \"Permitir el acceso a las URL de archivo\" en los detalles de la extensión."
+  },
+  "step2Btn": {
+    "message": "Abrir ajustes de la extensión"
+  },
+  "step3Title": {
+    "message": "Conectar la CLI (macOS)"
+  },
+  "step3Desc": {
+    "message": "Ejecuta esto una vez en la terminal para instalar el comando artifact-open y su conector. Este paso se actualiza solo unos segundos después."
+  },
+  "step3Hint": {
+    "message": "¿Ya lo instalaste y sigue esperando? Desactiva y activa la extensión en chrome://extensions."
+  },
+  "step4Title": {
+    "message": "Avísale a tu agente"
+  },
+  "step4Desc": {
+    "message": "Pega este prompt en un chat de Claude Code o Codex, o añádelo a CLAUDE.md / AGENTS.md, para que tu agente use artifact-open al abrir HTML."
+  },
+  "copy": {
+    "message": "Copiar"
+  },
+  "copied": {
+    "message": "Copiado"
+  },
+  "allReady": {
+    "message": "Todo listo: los informes que abra tu agente se reunirán en el panel lateral."
+  },
+  "notReady": {
+    "message": "Completa los pasos pendientes y aquí aparecerá como listo."
+  },
+  "privacyNote": {
+    "message": "Esta extensión no recopila datos ni envía nada fuera de tu equipo."
+  },
+  "privacyLink": {
+    "message": "Política de privacidad"
+  },
+  "optionsDocTitle": {
+    "message": "Ajustes de Artifact Dock"
+  },
+  "optLead": {
+    "message": "Agrupa las pestañas de HTML local y artefactos. Los cambios se guardan al instante."
+  },
+  "optSaved": {
+    "message": "Guardado"
+  },
+  "optSetupLink": {
+    "message": "Ver de nuevo la guía de instalación"
+  },
+  "optSecDup": {
+    "message": "Pestañas duplicadas"
+  },
+  "optDedupe": {
+    "message": "Mantener una pestaña por documento"
+  },
+  "optDedupeDesc": {
+    "message": "Al abrir un documento ya abierto, se reutiliza su pestaña y se cierra la nueva."
+  },
+  "optMatch": {
+    "message": "Qué cuenta como el mismo documento"
+  },
+  "optMatchDesc": {
+    "message": "<b>Ruta completa</b> une solo el mismo archivo · <b>Solo nombre</b> también une <code>/a/report.html</code> y <code>/b/report.html</code> · <b>Título</b> une archivos distintos con el mismo <code>&lt;title&gt;</code> (antes de que cargue el título se usa la ruta, así que sirve sobre todo con el botón Ordenar)"
+  },
+  "optMatchPath": {
+    "message": "Ruta completa (segura)"
+  },
+  "optMatchFilename": {
+    "message": "Solo nombre de archivo"
+  },
+  "optMatchTitle": {
+    "message": "Título del documento"
+  },
+  "optReload": {
+    "message": "Recargar al reutilizar una pestaña"
+  },
+  "optReloadDesc": {
+    "message": "Activado por defecto, ya que el agente probablemente reescribió el archivo."
+  },
+  "optSecFocus": {
+    "message": "Foco"
+  },
+  "optFocusGuard": {
+    "message": "No enfocar pestañas abiertas desde fuera"
+  },
+  "optFocusGuardDesc": {
+    "message": "Si una pestaña se abrió desde la terminal, vuelve a la que estabas viendo. Los enlaces abiertos desde una página no se tocan."
+  },
+  "optSecGroup": {
+    "message": "Grupo de pestañas"
+  },
+  "optAutoGroup": {
+    "message": "Agrupar las pestañas de artefactos"
+  },
+  "optAutoGroupDesc": {
+    "message": "Quedan juntas en la barra de pestañas y ocupan menos espacio."
+  },
+  "optGroupTitle": {
+    "message": "Nombre del grupo"
+  },
+  "optGroupColor": {
+    "message": "Color del grupo"
+  },
+  "optViewMode": {
+    "message": "Al ver desde el panel lateral"
+  },
+  "optViewModeDesc": {
+    "message": "<b>Sacar una</b> saca solo esa pestaña del grupo; el resto sigue plegado (recomendado) · <b>Expandir grupo</b> la activa normalmente; el grupo se expande y se vuelve a plegar al salir"
+  },
+  "optViewSolo": {
+    "message": "Sacar una"
+  },
+  "optViewExpand": {
+    "message": "Expandir grupo"
+  },
+  "optCollapse": {
+    "message": "Mantener el grupo plegado"
+  },
+  "optCollapseDesc": {
+    "message": "Actívalo para ahorrar espacio en la barra. Ideal si eliges documentos desde el panel lateral."
+  },
+  "optSweepOnStart": {
+    "message": "Ordenar duplicados al iniciar el navegador"
+  },
+  "optSweepOnStartDesc": {
+    "message": "Si está desactivado, solo se ordena al pulsar Ordenar en el panel lateral."
+  },
+  "optMaxTabs": {
+    "message": "Máximo de pestañas de artefactos"
+  },
+  "optMaxTabsDesc": {
+    "message": "0 significa sin límite. Si se supera, se cierran primero las menos vistas; siguen en la lista y se reabren con un clic (las fijadas y la actual se mantienen)."
+  },
+  "optSecTarget": {
+    "message": "Qué gestionar"
+  },
+  "optTrackClaude": {
+    "message": "Gestionar también artefactos de claude.ai"
+  },
+  "optTrackClaudeDesc": {
+    "message": "Si está desactivado, solo se gestiona HTML local <code>file://</code>."
+  }
+}

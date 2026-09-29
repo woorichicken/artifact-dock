@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="welcomeDocTitle">Artifact Dock</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+  <link rel="stylesheet" href="welcome.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="hero">
+      <img src="../icons/icon128.png" alt="" width="56" height="56" />
+      <div>
+        <h1 data-i18n="welcomeTitle"></h1>
+        <p class="lead" data-i18n="welcomeLead"></p>
+      </div>
+    </header>
+
+    <div id="summary" class="summary"></div>
+
+    <ol class="steps">
+      <li class="step" id="step-install" data-state="done">
+        <span class="dot"></span>
+        <div class="body">
+          <div class="head"><h2 data-i18n="step1Title"></h2><span class="state"></span></div>
+          <p data-i18n="step1Desc"></p>
+        </div>
+      </li>
+
+      <li class="step" id="step-file" data-state="todo">
+        <span class="dot"></span>
+        <div class="body">
+          <div class="head"><h2 data-i18n="step2Title"></h2><span class="state"></span></div>
+          <p data-i18n="step2Desc"></p>
+          <button id="openExtSettings" class="primary" data-i18n="step2Btn"></button>
+        </div>
+      </li>
+
+      <li class="step" id="step-cli" data-state="waiting">
+        <span class="dot"></span>
+        <div class="body">
+          <div class="head"><h2 data-i18n="step3Title"></h2><span class="state"></span></div>
+          <p data-i18n="step3Desc"></p>
+          <div class="code">
+            <code id="installCmd"></code>
+            <button class="copy" data-copy="installCmd" data-i18n="copy"></button>
+          </div>
+          <p class="hint" data-i18n="step3Hint"></p>
+        </div>
+      </li>
+
+      <li class="step" id="step-agent" data-state="optional">
+        <span class="dot"></span>
+        <div class="body">
+          <div class="head"><h2 data-i18n="step4Title"></h2><span class="state"></span></div>
+          <p data-i18n="step4Desc"></p>
+          <div class="prompt">
+            <pre id="agentPromptText"></pre>
+            <button class="copy primary" data-copy="agentPromptText" data-i18n="copy"></button>
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <footer class="foot-note">
+      <span data-i18n="privacyNote"></span>
+      <a href="https://github.com/woorichicken/artifact-dock/blob/main/PRIVACY.md" target="_blank" rel="noopener" data-i18n="privacyLink"></a>
+      · <a href="https://github.com/woorichicken/artifact-dock" target="_blank" rel="noopener">GitHub</a>
+    </footer>
+  </main>
+  <script type="module" src="welcome.js"></script>
+</body>
+</html>

@@ -161,3 +161,35 @@ body {
   pointer-events: none;
 }
 .toast.on { opacity: 1; }
+
+/* CLI 연결 상태. 끊겨 있을 때만 눈에 띄게 한다 — 연결된 상태는 조용한 확인용이다. */
+.host-status {
+  display: block;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  padding: 5px 12px;
+  text-align: left;
+  font-size: 11.5px;
+  background: transparent;
+  color: var(--muted);
+}
+.host-status.ok { color: #15803d; cursor: default; }
+.host-status.warn { background: #fff7ed; color: #b45309; cursor: pointer; }
+.host-status.warn:hover { text-decoration: underline; }
+@media (prefers-color-scheme: dark) {
+  .host-status.ok { color: #4ade80; }
+  .host-status.warn { background: #3a2a14; color: #fbbf24; }
+}
+
+.primary {
+  margin-top: 10px;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 12px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.primary:hover { filter: brightness(1.08); }
