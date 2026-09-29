@@ -144,16 +144,16 @@
     "message": "Haz clic para ver la guía de instalación"
   },
   "agentPromptBtn": {
-    "message": "Copiar prompt para el agente"
+    "message": "Copiar prompt de configuración"
   },
   "toastPromptCopied": {
-    "message": "Prompt copiado. Pégalo en el chat o en CLAUDE.md"
+    "message": "Prompt copiado. Pégalo en un chat de Claude Code o Codex"
   },
   "toastCopyFail": {
     "message": "No se pudo copiar"
   },
   "agentPrompt": {
-    "message": "Artifact Dock está instalado en este equipo. Para abrir resultados HTML (informes, vistas previas, documentos) en el navegador, usa `artifact-open <ruta del archivo>` en lugar de `open`, `xdg-open` o abrir el navegador directamente.\n- Se abre en una pestaña de fondo, así que nunca tapa lo que el usuario está viendo.\n- Si vuelves a abrir el mismo archivo, se recarga la pestaña existente en vez de crear otra. Después de editar un archivo, vuelve a ejecutarlo con la misma ruta.\n- Varios archivos: `artifact-open a.html b.html`. Usa `artifact-open -f <archivo>` solo cuando el usuario deba verlo de inmediato.\n- Comprueba la conexión con `artifact-open --status`. Si el comando falla, no uses otro método para abrirlo: avisa al usuario e incluye la ruta del archivo."
+    "message": "Configura Artifact Dock (https://github.com/woorichicken/artifact-dock) en este Mac. La extensión de Chrome ya está instalada. Sigue estos pasos, comprueba el resultado de cada uno y dame un resumen al final.\n\n1. Requisitos: confirma que es macOS y que `git` y `python3` están disponibles.\n2. Instalación: si `~/artifact-dock` no existe, ejecuta `git clone https://github.com/woorichicken/artifact-dock.git ~/artifact-dock`; si existe, `git -C ~/artifact-dock pull --ff-only`. Luego ejecuta `~/artifact-dock/install.sh`. Registra el host nativo e instala `artifact-open` y un envoltorio de `open` en `~/.local/bin`. Si se detiene porque ya hay otro `open`, no lo sobrescribas: avísame.\n3. Hacer que `open` pase por Artifact Dock: en la configuración del shell (`~/.zshrc` para zsh), asegúrate de que `~/.local/bin` esté antes que `/usr/bin` en el PATH. Si ya lo está, omite este paso; si añades una línea, dime exactamente cuál. Es un ejecutable envoltorio, no una función ni un alias, así que `open archivo.html` desde agentes, scripts y Node también pasa por Artifact Dock y se abre en una pestaña de fondo. Los archivos que no son HTML se pasan sin cambios al `open` original.\n4. Verificación: en un shell nuevo, comprueba que `command -v open` sea `~/.local/bin/open` y que `artifact-open --status` indique que la extensión está activa. Si no está conectada, pídeme que desactive y active la extensión en Chrome. Por último, abre un HTML temporal con `open` y pídeme que confirme que se abrió en una pestaña de fondo sin tapar lo que estaba viendo.\n5. A partir de ahora: abre los resultados HTML con `artifact-open <archivo>` (o `open <archivo>`). Si el comando falla, no lo sortees con `/usr/bin/open`, AppleScript ni nada parecido: avísame e incluye la ruta del archivo."
   },
   "welcomeDocTitle": {
     "message": "Empieza con Artifact Dock"
@@ -195,16 +195,16 @@
     "message": "Conectar la CLI (macOS)"
   },
   "step3Desc": {
-    "message": "Ejecuta esto una vez en la terminal para instalar el comando artifact-open y su conector. Este paso se actualiza solo unos segundos después."
+    "message": "Ejecuta esto una vez en la terminal para instalar el comando artifact-open y su conector, o déjaselo a tu agente con el prompt del paso 4. Este paso se actualiza solo unos segundos después."
   },
   "step3Hint": {
     "message": "¿Ya lo instalaste y sigue esperando? Desactiva y activa la extensión en chrome://extensions."
   },
   "step4Title": {
-    "message": "Avísale a tu agente"
+    "message": "Deja que tu agente lo configure"
   },
   "step4Desc": {
-    "message": "Pega este prompt en un chat de Claude Code o Codex, o añádelo a CLAUDE.md / AGENTS.md, para que tu agente use artifact-open al abrir HTML."
+    "message": "Pega este prompt en un chat de Claude Code o Codex. Tu agente instala la CLI, hace que `open` pase por Artifact Dock (PATH del shell), comprueba la conexión y te informa."
   },
   "copy": {
     "message": "Copiar"

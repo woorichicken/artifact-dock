@@ -144,16 +144,16 @@
     "message": "Click to see the setup guide"
   },
   "agentPromptBtn": {
-    "message": "Copy agent prompt"
+    "message": "Copy agent setup prompt"
   },
   "toastPromptCopied": {
-    "message": "Agent prompt copied. Paste it into your chat or CLAUDE.md"
+    "message": "Setup prompt copied. Paste it into a Claude Code or Codex chat"
   },
   "toastCopyFail": {
     "message": "Couldn't copy"
   },
   "agentPrompt": {
-    "message": "Artifact Dock is installed on this computer. When you open HTML output (reports, previews, docs) in the browser, use `artifact-open <file path>` instead of `open`, `xdg-open`, or launching the browser directly.\n- It opens in a background tab, so it never covers what the user is looking at.\n- Opening the same file again reloads the existing tab instead of adding a new one. After editing a file, run it again with the same path.\n- Multiple files: `artifact-open a.html b.html`. Use `artifact-open -f <file>` only when the user needs to see it right away.\n- Check the connection with `artifact-open --status`. If the command fails, do not fall back to another opener — tell the user and include the file path."
+    "message": "Set up Artifact Dock (https://github.com/woorichicken/artifact-dock) on this Mac. The Chrome extension is already installed. Follow these steps, check the result of each one, and give me a summary at the end.\n\n1. Prerequisites: confirm this is macOS and that `git` and `python3` are available.\n2. Install: if `~/artifact-dock` doesn't exist, run `git clone https://github.com/woorichicken/artifact-dock.git ~/artifact-dock`; otherwise `git -C ~/artifact-dock pull --ff-only`. Then run `~/artifact-dock/install.sh`. It registers the native host and installs `artifact-open` and an `open` wrapper into `~/.local/bin`. If it stops because a different `open` already exists there, don't overwrite it — tell me.\n3. Route `open` through Artifact Dock: in the shell config (`~/.zshrc` for zsh), make sure `~/.local/bin` comes before `/usr/bin` in PATH. Skip if it already does; if you add a line, tell me exactly what you added. It's an executable wrapper, not a shell function or alias, so `open file.html` from agents, scripts, and Node also goes through Artifact Dock into a background tab. Non-HTML files are passed to the original `open` unchanged.\n4. Verify: in a new shell, check that `command -v open` is `~/.local/bin/open` and `artifact-open --status` reports the extension as alive. If it isn't connected, ask me to turn the extension off and on in Chrome. Finally, open a temporary HTML file with `open` and ask me to confirm it opened in a background tab without covering what I was looking at.\n5. From now on: open HTML output with `artifact-open <file>` (or `open <file>`). If the command fails, do not work around it with `/usr/bin/open`, AppleScript, or anything else — tell me and include the file path."
   },
   "welcomeDocTitle": {
     "message": "Get started with Artifact Dock"
@@ -195,16 +195,16 @@
     "message": "Connect the CLI (macOS)"
   },
   "step3Desc": {
-    "message": "Run this once in the terminal to install the artifact-open command and its connector. This step updates on its own a few seconds after install."
+    "message": "Run this once in the terminal to install the artifact-open command and its connector — or hand it to your agent with the prompt in step 4. This step updates on its own a few seconds after install."
   },
   "step3Hint": {
     "message": "Already installed but still waiting? Turn the extension off and on in chrome://extensions."
   },
   "step4Title": {
-    "message": "Tell your agent"
+    "message": "Let your agent set it up"
   },
   "step4Desc": {
-    "message": "Paste this prompt into a Claude Code or Codex chat, or add it to CLAUDE.md / AGENTS.md, so your agent uses artifact-open to open HTML."
+    "message": "Paste this prompt into a Claude Code or Codex chat. Your agent installs the CLI, routes `open` through Artifact Dock (shell PATH setup), checks the connection, and reports back."
   },
   "copy": {
     "message": "Copy"

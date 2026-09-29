@@ -144,16 +144,16 @@
     "message": "눌러서 설치 안내 보기"
   },
   "agentPromptBtn": {
-    "message": "에이전트 프롬프트 복사"
+    "message": "에이전트 설정 프롬프트 복사"
   },
   "toastPromptCopied": {
-    "message": "에이전트용 프롬프트를 복사했습니다. 대화나 CLAUDE.md 에 붙여넣으세요"
+    "message": "설정 프롬프트를 복사했습니다. Claude Code·Codex 대화에 붙여넣으세요"
   },
   "toastCopyFail": {
     "message": "복사하지 못했습니다"
   },
   "agentPrompt": {
-    "message": "이 컴퓨터에는 Artifact Dock 이 설치돼 있다. HTML 결과물(리포트·미리보기·문서)을 브라우저로 열 때는 `open`·`xdg-open`·브라우저 직접 실행 대신 `artifact-open <파일경로>` 를 쓴다.\n- 백그라운드 탭으로 열려 사용자가 보던 화면을 가리지 않는다.\n- 같은 파일을 다시 열면 새 탭 대신 기존 탭이 새로고침된다. 파일을 고친 뒤에는 같은 경로로 다시 실행한다.\n- 여러 파일은 `artifact-open a.html b.html`. 사용자가 바로 봐야 할 때만 `artifact-open -f <파일>`.\n- 연결 확인은 `artifact-open --status`. 명령이 실패하면 다른 방법으로 열지 말고, 파일 경로와 함께 사용자에게 알린다."
+    "message": "Artifact Dock(https://github.com/woorichicken/artifact-dock)을 이 Mac 에 설정해 줘. Chrome 확장은 이미 설치돼 있다. 아래 순서대로 하고, 단계마다 결과를 확인한 뒤 마지막에 요약해 줘.\n\n1. 준비: macOS 인지, `git`·`python3` 가 있는지 확인한다.\n2. 설치: `~/artifact-dock` 이 없으면 `git clone https://github.com/woorichicken/artifact-dock.git ~/artifact-dock`, 있으면 `git -C ~/artifact-dock pull --ff-only`. 그다음 `~/artifact-dock/install.sh` 를 실행한다. 네이티브 호스트가 등록되고 `~/.local/bin` 에 `artifact-open` 과 `open` 래퍼가 설치된다. 이미 다른 `open` 이 있어 설치가 멈추면 덮어쓰지 말고 알려 줘.\n3. open 가로채기: 셸 설정 파일(zsh 면 `~/.zshrc`)에서 `~/.local/bin` 이 PATH 상 `/usr/bin` 보다 앞에 오게 한다. 이미 그렇다면 건너뛰고, 줄을 추가했다면 무엇을 넣었는지 알려 줘. 셸 함수·alias 가 아니라 실행 파일 래퍼라서 에이전트·스크립트·Node 가 `open 파일.html` 을 불러도 Artifact Dock 을 거쳐 백그라운드 탭으로 열린다. HTML 이 아닌 파일은 원래 `open` 으로 그대로 넘어간다.\n4. 확인: 새 셸에서 `command -v open` 이 `~/.local/bin/open` 인지, `artifact-open --status` 가 '살아있음' 인지 본다. 연결이 없으면 Chrome 에서 확장을 껐다 켜 달라고 나에게 요청한다. 마지막으로 임시 HTML 하나를 `open` 으로 열고, 보던 화면이 가려지지 않고 백그라운드 탭으로 열렸는지 나에게 확인받는다.\n5. 이후: HTML 결과물은 `artifact-open <파일>`(또는 `open <파일>`)로 연다. 명령이 실패하면 `/usr/bin/open`·AppleScript 같은 다른 방법으로 우회하지 말고 파일 경로와 함께 알려 준다."
   },
   "welcomeDocTitle": {
     "message": "Artifact Dock 시작하기"
@@ -195,16 +195,16 @@
     "message": "CLI 연결 (macOS)"
   },
   "step3Desc": {
-    "message": "터미널에서 아래 명령을 한 번 실행하면 artifact-open 명령과 연결 프로그램이 설치됩니다. 설치하면 몇 초 안에 이 칸이 자동으로 바뀝니다."
+    "message": "터미널에서 아래 명령을 한 번 실행하면 artifact-open 명령과 연결 프로그램이 설치됩니다. 직접 하기 번거로우면 4단계 프롬프트로 에이전트에게 맡기세요. 설치하면 몇 초 안에 이 칸이 자동으로 바뀝니다."
   },
   "step3Hint": {
     "message": "이미 설치했는데 대기 중이면 chrome://extensions 에서 확장을 껐다 켜세요."
   },
   "step4Title": {
-    "message": "에이전트에게 알려주기"
+    "message": "에이전트에게 설정 맡기기"
   },
   "step4Desc": {
-    "message": "아래 프롬프트를 Claude Code·Codex 대화에 붙여넣거나 CLAUDE.md / AGENTS.md 에 넣으면, 에이전트가 HTML 을 열 때 artifact-open 을 씁니다."
+    "message": "아래 프롬프트를 Claude Code·Codex 대화에 붙여넣으면 에이전트가 CLI 설치, open 가로채기(셸 PATH 설정), 연결 확인까지 직접 하고 결과를 알려줍니다."
   },
   "copy": {
     "message": "복사"

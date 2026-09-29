@@ -73,13 +73,14 @@ artifact-open --status
 
 사이드바는 툴바 아이콘 클릭 또는 `Cmd+Shift+U`.
 
-### 에이전트에게 물려줄 때
+### 에이전트에게 설정 맡기기
 
-`open`/`xdg-open` 대신 `artifact-open` 을 쓰게 하면 된다. 프로젝트 CLAUDE.md 에 한 줄:
+설치 안내 4단계(또는 사이드바 🤖)에서 **설정 프롬프트**를 복사해 Claude Code·Codex 대화에 붙여넣는다.
+에이전트가 직접 한다: 저장소 clone → `install.sh` → 셸 설정(`~/.zshrc`)에서 `~/.local/bin` 을 `/usr/bin`
+앞에 두기 → `command -v open`·`artifact-open --status` 확인 → 임시 HTML 로 백그라운드 열기 확인.
 
-```md
-- HTML 결과물을 브라우저로 열 때는 `open` 대신 `artifact-open <path>` 를 쓴다 (포커스 유지 + 탭 중복 방지).
-```
+지시문을 CLAUDE.md 에 적어 두는 방식 대신 **`open` 자체를 가로채는** 쪽을 택했다. 에이전트가 지시를
+잊어도, 스크립트·Node 가 `open` 을 직접 불러도 같은 경로를 타기 때문이다(아래 절).
 
 ### HTML 직접 열기 차단 (2026-09-23)
 
