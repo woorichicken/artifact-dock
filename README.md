@@ -1,37 +1,47 @@
 # Artifact Dock
 
-> A Chrome extension + CLI that opens agent-generated local HTML reports and Claude artifacts
-> **in a background tab, one tab per document, listed in a side panel** — without stealing focus.
-> macOS only. [Privacy policy](PRIVACY.md) · MIT License
+> Your agent writes an HTML report — and Chrome jumps in front of your terminal. Again. And again.
+> **Artifact Dock keeps every agent-generated HTML page in one place**: opened in a background tab,
+> one tab per document, listed in a side panel. Your focus stays where you were typing.
 
-에이전트가 열어대는 로컬 HTML·Claude 아티팩트를 **포커스 안 뺏고 / 탭 하나만 / 사이드바 목록으로** 다루는 Chrome 확장 + CLI.
+**[Chrome Web Store](https://chromewebstore.google.com/detail/artifact-dock/nfifnjdpmjacfelfapgeibnnbkokceim)** ·
+Open source (MIT) · macOS · [Privacy policy](PRIVACY.md) · [한국어](README.ko.md)
 
-## 해결하는 것
+[![Artifact Dock demo — without it, every `open` pulls Chrome to the front and the tab bar fills up (18 tabs from 4 sessions). With it, pages open quietly beside the terminal and land in one side panel.](docs/media/artifact-dock-demo.gif)](docs/media/artifact-dock-demo.mp4)
 
-| 증상 | 원인 | 이 프로젝트의 처리 |
+▶ **[Watch the 43-second demo (MP4)](docs/media/artifact-dock-demo.mp4)** — recorded live: a real Claude Code session
+running `/eli5` in a plain terminal, next to Chrome. Before: four sessions, 18 tabs, Chrome covering the terminal on every open.
+After: the same work, the terminal never loses focus, and the docs collect in the side panel.
+
+Great with skills that explain things as HTML (like an `/eli5` page, a review board, or a test report): keep the agent on
+the left, read the result on the right, never resize or Cmd-Tab between them.
+
+## What it fixes
+
+| Symptom | Cause | What Artifact Dock does |
 |---|---|---|
-| 파일 열 때마다 화면이 Chrome으로 넘어감 | `open` 이 **Chrome 앱 자체를** 앞으로 가져옴 | CLI가 소켓으로 확장에 부탁 → 확장이 `tabs.create({active:false})` 로 **백그라운드 탭** 생성 |
-| 같은 리포트를 열 때마다 새 탭 | dedup 없음 | 파일 경로(또는 파일명) 기준으로 기존 탭 재사용 + 새로고침 |
-| 탭이 많아 파비콘만 보임 | 탭바 포화 | 사이드 패널 목록 + 탭그룹으로 한 덩어리 |
+| Every new file pulls the screen over to Chrome | `open` brings **the whole Chrome app** to the front | The CLI asks the extension over a socket → the extension creates a **background tab** with `tabs.create({active:false})` |
+| The same report opens a new tab every time | No dedup | Reuses the existing tab by file path (or file name / title) and reloads it |
+| So many tabs you only see favicons | Tab bar overflow | One side-panel list + one tab group |
 
-### 왜 CLI만으로는 안 되나 (실측)
+### Why a CLI alone can't do it (measured)
 
-`open -g` (앱을 앞으로 안 가져오는 플래그)도, AppleScript `make new tab` 만으로도 **Chrome은 스스로 앞으로 나온다.**
+Neither `open -g` (the "don't bring the app forward" flag) nor AppleScript `make new tab` stops it — **Chrome brings itself forward.**
 
 ```
-base=Finder  →  0.3s: Google Chrome  0.7s: Google Chrome   ← open -g 를 써도 이렇다
+base=Finder  →  0.3s: Google Chrome  0.7s: Google Chrome   ← even with open -g
 ```
 
-확장이 연결돼 있을 때만 연다. `tabs.create({active:false})`로 백그라운드 탭을 만들고,
-경로·파일명·제목 규칙으로 기존 탭을 재사용한다.
+Pages open only when the extension is connected. It creates a background tab with `tabs.create({active:false})`
+and reuses an existing tab by path, file name, or title rules.
 
-확장이 연결되지 않거나 응답이 실패하면 CLI도 실패한다. 예전 AppleScript 대체 경로는
-2026-09-23에 제거했다. 포커스를 복원하려 시도하는 것보다 직접 열기를 시작하지 않는 것이 확실하다.
+If the extension isn't connected or doesn't answer, the CLI fails. The old AppleScript fallback was removed on
+2026-09-23 — not starting a direct open at all is more reliable than trying to restore focus afterwards.
 
-## 설치
+## Install
 
-확장은 Chrome 웹스토어 또는 소스(압축해제 로드) 중 하나로 설치한다. **어느 쪽이든 CLI·네이티브 호스트는
-`install.sh` 로 따로 깐다** — 확장은 로컬 프로그램을 설치할 수 없어서다.
+Install the extension from the Chrome Web Store or from source (load unpacked). **Either way, install the CLI and
+native host separately with `install.sh`** — an extension can't install local programs.
 
 ```bash
 git clone https://github.com/woorichicken/artifact-dock.git
@@ -39,170 +49,178 @@ cd artifact-dock
 ./install.sh
 ```
 
-`host/.extension-id` 에 적힌 확장 ID(소스 로드용 · 웹스토어용)를 모두 허용하므로 둘 중 무엇으로 깔아도 연결된다.
+Both extension IDs listed in `host/.extension-id` (source build and Web Store) are allowed, so either install connects.
 
-소스로 로드할 때는 Chrome에서:
+To load from source, in Chrome:
 
-1. `chrome://extensions` → 우측 상단 **개발자 모드** 켜기
-2. **압축해제된 확장 프로그램을 로드** → 이 폴더 선택
-3. 확장 상세에서 **"파일 URL에 대한 액세스 허용"** 켜기 (로컬 HTML을 다루므로)
-4. 확인:
+1. `chrome://extensions` → turn on **Developer mode** (top right)
+2. **Load unpacked** → select this folder
+3. In the extension details, turn on **"Allow access to file URLs"** (it handles local HTML)
+4. Check:
 
 ```bash
-artifact-open --status     # "확장 연결: 살아있음" 이면 끝
+artifact-open --status     # prints "확장 연결: 살아있음 (…dock.sock)" (= connected) when you're done
 ```
 
-> `--status` 가 "없음"이면 확장을 껐다 켜세요. 네이티브 호스트는 확장이 켜질 때 실행됩니다.
+> If `--status` says not connected, turn the extension off and on. The native host starts when the extension starts.
 
-## 처음 설치하면
+## First run
 
-설치 직후 **설치 안내 탭**이 열린다. 파일 URL 접근·CLI 연결을 브라우저에 직접 물어 완료 여부를 표시하고,
-에이전트에게 붙여넣을 프롬프트를 복사할 수 있다. 사이드바의 🤖 로도 같은 프롬프트를 복사한다.
-닫은 뒤에는 설정 맨 위 「설치 안내 다시 보기」.
+Right after install, a **setup tab** opens. It asks the browser directly whether file-URL access and the CLI
+connection are working, and lets you copy a prompt to paste into your agent. The 🤖 button in the side panel copies
+the same prompt. After closing it, use "Show setup guide again" at the top of the settings.
 
-화면 언어는 브라우저 언어를 따른다 — 한국어·English·Español, 그 외는 영어. 문구 원본은 `_locales/<lang>/messages.json`.
+The UI follows the browser language — Korean, English, Spanish; anything else falls back to English.
+Strings live in `_locales/<lang>/messages.json`.
 
-## 사용
+## Usage
 
 ```bash
-artifact-open report.html          # 백그라운드로 열기 (같은 파일이면 기존 탭 새로고침)
-artifact-open a.html b.html        # 여러 개
-artifact-open -f report.html       # 이번만 포커스 주면서
+artifact-open report.html          # open in the background (reloads the existing tab for the same file)
+artifact-open a.html b.html        # several at once
+artifact-open -f report.html       # bring it to the front this time only
 artifact-open --status
 ```
 
-사이드바는 툴바 아이콘 클릭 또는 `Cmd+Shift+U`.
+Open the side panel with the toolbar icon or `Cmd+Shift+U`.
 
-### 에이전트에게 설정 맡기기
+### Let your agent set it up
 
-설치 안내 4단계(또는 사이드바 🤖)에서 **설정 프롬프트**를 복사해 Claude Code·Codex 대화에 붙여넣는다.
-에이전트가 직접 한다: 저장소 clone → `install.sh` → 셸 설정(`~/.zshrc`)에서 `~/.local/bin` 을 `/usr/bin`
-앞에 두기 → `command -v open`·`artifact-open --status` 확인 → 임시 HTML 로 백그라운드 열기 확인.
+Copy the **setup prompt** from step 4 of the setup tab (or 🤖 in the side panel) and paste it into a Claude Code or
+Codex conversation. The agent does the rest: clone → `install.sh` → put `~/.local/bin` before `/usr/bin` in your shell
+config (`~/.zshrc`) → check `command -v open` and `artifact-open --status` → confirm a temporary HTML opens in the background.
 
-지시문을 CLAUDE.md 에 적어 두는 방식 대신 **`open` 자체를 가로채는** 쪽을 택했다. 에이전트가 지시를
-잊어도, 스크립트·Node 가 `open` 을 직접 불러도 같은 경로를 타기 때문이다(아래 절).
+Instead of writing an instruction into CLAUDE.md, Artifact Dock **intercepts `open` itself**. Even if the agent forgets
+an instruction, or a script or Node calls `open` directly, it goes through the same path (next section).
 
-### HTML 직접 열기 차단 (2026-09-23)
+### Blocking direct HTML opens (2026-09-23)
 
-`./install.sh --cli-only`는 기존 네이티브 호스트 등록을 건드리지 않고
-`~/.local/bin/artifact-open`과 `~/.local/bin/open`만 연결한다. 기존의 다른 실행 파일은
-덮어쓰지 않고 설치를 중단한다. `~/.local/bin`은 `/usr/bin`보다 PATH에서 앞에 있어야 한다.
+`./install.sh --cli-only` links only `~/.local/bin/artifact-open` and `~/.local/bin/open`, without touching an existing
+native host registration. If another executable is already there, it stops instead of overwriting it.
+`~/.local/bin` must come before `/usr/bin` in `PATH`.
 
-- `open 보고서.html`과 Node `execFileSync("open", [파일])`도 실행 파일 래퍼를 통해
-  Artifact Dock으로 간다. `.zshrc` 함수만으로는 Node의 직접 실행을 가로챌 수 없다.
-- `.html`/`.htm`은 대소문자와 file/HTTP URL의 쿼리·프래그먼트를 구분한다.
-  `-g`와 `-a 앱`/`-b 번들`은 받아도 HTML은 확장을 통해 백그라운드로 연다.
-  HTML의 미지원 옵션이나 HTML+다른 파일 혼합 요청은 실행 전에 거부한다.
-- HTML이 아닌 명령은 인자를 그대로 `/usr/bin/open`에 전달한다.
-- 확장 미연결·오류·잘못된 응답이면 `artifact-open`은 실패로 종료한다.
-  AppleScript나 macOS `open`으로 자동 대체하지 않는다. 예전 `_open_quietly.py`도 같은 규칙을 따른다.
-- `/usr/bin/open` 절대경로 호출이나 PATH를 바꾸는 프로그램까지 막는 OS 보안 장치는 아니다.
-  HTML 제작 스크립트의 직접 opener 호출도 회귀 검사해야 한다.
+- `open report.html` and Node's `execFileSync("open", [file])` both go to Artifact Dock through the executable wrapper.
+  A `.zshrc` function alone can't intercept Node's direct exec.
+- `.html`/`.htm` are matched case-insensitively, including file/HTTP URLs with query strings and fragments.
+  `-g`, `-a <app>` and `-b <bundle>` are accepted, but HTML still opens in the background through the extension.
+  Unsupported options for HTML, or HTML mixed with other files, are rejected before running.
+- Non-HTML commands are passed to `/usr/bin/open` unchanged.
+- If the extension isn't connected, errors, or answers badly, `artifact-open` exits with a failure.
+  It never falls back to AppleScript or macOS `open`. The old `_open_quietly.py` follows the same rule.
+- This is not an OS security boundary: a direct `/usr/bin/open` call or a program that rewrites `PATH` gets around it.
+  Regression-test direct opener calls in your HTML-producing scripts too.
 
-검증: `python3 tests/open_guard.test.py`. 가짜 소켓과 실행 명령으로 성공·실패·Node 경로를
-검사하므로 실제 Chrome은 열리지 않는다. 제거는 `./install.sh --uninstall`이며 자기 CLI 링크만 지운다.
+Tests: `python3 tests/open_guard.test.py` checks success, failure and the Node path with a fake socket and fake
+commands, so no real Chrome opens. `./install.sh --uninstall` removes only its own CLI links.
 
-## 이미 열려 있는 탭 정리
+## Cleaning up tabs that are already open
 
-dedup 은 **새로 열 때**만 동작한다. 확장을 켜기 전부터 쌓여 있던 탭은 사이드바 하단 **[정리]** 버튼으로 치운다.
+Dedup works **only when opening**. For tabs that piled up before the extension was on, use **[Tidy up]** at the
+bottom of the side panel.
 
-- 같은 문서를 가리키는 탭을 하나만 남기고 닫는다 (활성 탭 > Chrome 고정탭 > 최근에 본 탭 순으로 남김)
-- 흩어진 아티팩트 탭을 탭그룹 하나로 모은다
-- 설정에서 **브라우저 켤 때 자동 정리** 로 바꿀 수 있다
+- Keeps one tab per document and closes the rest (active tab > Chrome-pinned tab > most recently viewed)
+- Gathers scattered artifact tabs into one tab group
+- Can run automatically **when the browser starts** (settings)
 
-목록에서 같은 문서는 한 줄로 묶여 `×3` 배지가 붙는다. 배지를 누르면 그 문서의 중복만 닫는다.
+In the list, duplicates of the same document collapse into one row with a `×3` badge. Click the badge to close just
+that document's duplicates.
 
-> 제목은 같은데 파일명이 다른 리포트가 쌓인다면 설정에서 **같은 문서 판정 기준 → 문서 제목** 으로 바꾼다.
+> If reports with the same title but different file names keep piling up, set **Same-document rule → Document title**.
 
-## 탭바가 파비콘으로 뒤덮이는 문제
+## When the tab bar fills with favicons
 
-Chrome 은 **접힌 그룹 안의 탭을 활성화하면 그룹을 통째로 펼친다.** 막을 방법이 없고,
-활성 탭이 든 그룹은 다시 접는 것도 거부한다. 그래서 두 가지로 우회한다.
+Chrome **expands a collapsed group whenever a tab inside it is activated.** That can't be prevented, and Chrome
+refuses to collapse a group that contains the active tab. Artifact Dock works around it in two ways.
 
-| 설정 | 동작 |
+| Setting | Behavior |
 |---|---|
-| **한 개만 꺼내기** (기본) | 볼 탭만 그룹 밖으로 빼내 보여준다. 나머지는 접힌 채 그대로. 그 탭을 벗어나면 조용히 그룹으로 돌려보낸다 |
-| | ↳ `ungroup` 과 활성화는 **그 자체로 그룹을 펼친다.** 그래서 원래 접혀 있었는지 기억해 뒀다가, 탭이 그룹 밖으로 나온 뒤(= 접기가 허용되는 유일한 시점) 반드시 되돌린다 |
-| | ↳ **탭을 그룹에 넣을 때도 펼쳐진다.** 접힘 복원은 `groupTabs()` 한 곳에서만 하고 모든 경로가 그걸 통과한다 |
-| | ↳ 꺼내 둔 탭은 기록이 아니라 **실제 상태**로 되돌린다 — "그룹 밖에 있는 아티팩트 탭"을 매번 훑어서 집어넣는다. 서비스 워커가 죽어 기록이 끊겨도 탭이 밖에 남지 않는다 |
-| 그룹 펼치기 | 평범하게 활성화한다. 대신 다른 탭으로 나가는 순간 그룹을 자동으로 다시 접는다 |
+| **Show one tab** (default) | Pulls only the tab you're viewing out of the group; the rest stay collapsed. When you leave that tab, it quietly goes back into the group |
+| | ↳ `ungroup` and activation **themselves expand the group**, so it remembers whether the group was collapsed and restores that once the tab is outside the group (the only moment collapsing is allowed) |
+| | ↳ **Adding a tab to a group also expands it.** Collapse restoration happens in one place, `groupTabs()`, and every path goes through it |
+| | ↳ Pulled-out tabs are restored from **actual state**, not a log — every pass sweeps "artifact tabs outside the group" back in, so tabs don't get stranded even if the service worker dies |
+| Expand group | Activates normally, and re-collapses the group as soon as you switch to another tab |
 
-탭 수 자체를 줄이려면 **아티팩트 탭 최대 개수**를 정한다. 넘으면 오래 안 본 것부터 닫히는데,
-사이드바 목록에는 남아서 클릭 한 번으로 되살아난다. 고정(📌)한 문서와 보고 있는 탭은 닫지 않는다.
-하단 **[탭 비우기]** 도 같다 — 탭만 닫고 목록은 남긴다.
+To cap the number of tabs, set **Maximum artifact tabs**. Past the limit, the least recently viewed close first —
+but they stay in the side-panel list and come back with one click. Pinned (📌) documents and the tab you're viewing
+are never closed. **[Close tabs]** at the bottom does the same: closes tabs, keeps the list.
 
-## 같은 문서인데 안 합쳐질 때
+## When the same document doesn't merge
 
-- **macOS 심링크**: `/tmp` 는 `/private/tmp` 의 심링크라 Chrome 이 어느 형태로 URL 을 만드느냐에
-  따라 같은 파일이 두 문서로 갈렸다. `/tmp`·`/var`·`/etc` 는 `/private` 접두사를 떼고 판정한다.
-- **파일명은 같고 경로가 다르면** 기본(전체 경로)에서는 별개 문서다. 설정에서 `파일 이름만` 또는
-  `문서 제목` 으로 바꾼다.
+- **macOS symlinks**: `/tmp` is a symlink to `/private/tmp`, so the same file could split into two documents depending
+  on which form Chrome used in the URL. `/tmp`, `/var` and `/etc` are compared with the `/private` prefix removed.
+- **Same file name, different path**: separate documents under the default (full path) rule. Switch to
+  `File name only` or `Document title` in settings.
 
-## [정리]가 안 끌고 가는 탭
+## Tabs [Tidy up] leaves alone
 
-| 탭 | 이유 |
+| Tab | Why |
 |---|---|
-| 지금 보고 있는 탭 | solo 모드에선 일부러 그룹 밖에 둔다(넣으면 그룹이 펼쳐진다) |
-| Chrome 탭 고정한 탭 | 고정탭은 그룹에 못 들어간다 |
-| 다른 창의 탭 | 창을 넘겨 옮기지 않는다. 그 창에 그룹이 따로 생긴다 |
-| HTML 이 아닌 `file://` | PDF·이미지 등은 대상이 아니다 |
+| The tab you're viewing | In "show one tab" mode it's deliberately kept outside the group (putting it in would expand the group) |
+| Chrome-pinned tabs | Pinned tabs can't join a group |
+| Tabs in another window | Not moved across windows; that window gets its own group |
+| Non-HTML `file://` | PDFs, images, etc. aren't managed |
 
-## 문제가 생기면
+## Troubleshooting
 
 ```bash
-./doctor.sh        # 호스트 등록·프로세스·소켓·CLI·Chrome 을 한 번에 점검
+./doctor.sh        # checks host registration, process, socket, CLI and Chrome in one go
 ```
 
-사이드바 왼쪽 아래에 `26개 열림 · 한 개만 · v0.2.0` 처럼 **버전과 모드**가 찍힌다.
-확장을 고친 뒤에는 이 버전이 올라갔는지부터 본다 — 안 올라갔으면 `chrome://extensions` 에서
-⟳ 를 누르지 않은 것이고, 그 상태에서 무엇을 고쳐도 반영되지 않는다.
+The bottom-left of the side panel shows **version and mode**, e.g. `26 open · solo · v0.4.0`.
+After changing the extension, check that this version went up first — if not, you didn't press ⟳ in
+`chrome://extensions`, and nothing you change will take effect.
 
-## 설정 (확장 아이콘 → ⚙)
+## Settings (extension icon → ⚙)
 
-| 항목 | 기본 | 설명 |
+| Item | Default | Description |
 |---|---|---|
-| 같은 문서 판정 | 전체 경로 | `파일 이름만`(경로 무시) / `문서 제목`(파일명이 달라도 title 이 같으면) 로 바꿀 수 있음 |
-| 재사용할 때 새로고침 | 켬 | 에이전트가 파일을 다시 썼을 테니 |
-| 포커스 가드 | 켬 | 외부에서 열린 탭이면 직전 탭으로 되돌림. 페이지 내 링크 클릭은 건드리지 않음 |
-| 탭 그룹 | 켬 | 그룹 이름·색. 기본으로 **접어둔다** |
-| 사이드바에서 볼 때 | 한 개만 꺼내기 | 탭바가 펼쳐지지 않게 그 탭만 그룹 밖으로 |
-| 아티팩트 탭 최대 개수 | 0 (무제한) | 넘으면 오래된 것부터 닫음 (목록은 유지) |
-| 시작할 때 자동 정리 | 끔 | 브라우저를 켤 때 중복 탭을 자동으로 닫음 |
-| Claude 아티팩트 | 켬 | `claude.ai/code/artifact/…`, `/public/artifacts/…`, `claude.site/artifacts/…` 를 함께 관리. 끄면 로컬 파일만 |
+| Same-document rule | Full path | Switch to `File name only` (ignore path) or `Document title` (same title even with different file names) |
+| Reload when reusing | On | The agent probably rewrote the file |
+| Focus guard | On | If a tab was opened from outside, return to the previous tab. In-page link clicks are untouched |
+| Tab group | On | Group name and color. **Collapsed** by default |
+| When viewing from the side panel | Show one tab | Pull only that tab out of the group so the tab bar doesn't expand |
+| Maximum artifact tabs | 0 (unlimited) | Over the limit, the oldest close first (they stay in the list) |
+| Tidy up duplicates on startup | Off | Close duplicate tabs automatically when the browser starts |
+| Claude artifacts | On | Also manage `claude.ai/code/artifact/…`, `/public/artifacts/…`, `claude.site/artifacts/…`. Off = local files only |
 
-## 구조
+## Layout
 
 ```
-manifest.json            확장 매니페스트 (key 고정 → ID 가 항상 hanplflofffhnolmbildckncaclkjbmf)
-src/background.js        dedup · 포커스 복원 · 탭그룹 · 네이티브 호스트 연결
-src/lib/keys.js          "같은 문서인가" 판정 규칙 (dedup 의 핵심)
-src/lib/config.js        설정 기본값
-src/sidepanel.*          사이드바 목록 UI
-src/options.*            설정 화면
-host/artifact_dock_host.py   CLI(unix socket) ↔ 확장(native messaging) 다리
-bin/artifact-open        CLI. 소켓 실패 시 nonzero 중단(직접 열기 금지)
-install.sh               네이티브 호스트 등록 + CLI 링크 (--uninstall 로 제거)
-scripts/build-cws.sh     웹스토어 업로드용 zip (manifest key 제거) → dist/
-PRIVACY.md               개인정보 처리방침 (웹스토어 등록 필수)
-run-tests.sh             확장 없이 돌릴 수 있는 검증
+manifest.json            extension manifest (fixed key → ID is always hanplflofffhnolmbildckncaclkjbmf)
+src/background.js        dedup · focus restore · tab groups · native host connection
+src/lib/keys.js          the "same document?" rules (the heart of dedup)
+src/lib/config.js        settings defaults
+src/sidepanel.*          side-panel list UI
+src/options.*            settings page
+host/artifact_dock_host.py   bridge between the CLI (unix socket) and the extension (native messaging)
+bin/artifact-open        CLI. Exits nonzero on socket failure (never opens directly)
+install.sh               native host registration + CLI links (--uninstall to remove)
+scripts/build-cws.sh     Web Store upload zip (manifest key removed) → dist/
+PRIVACY.md               privacy policy (required for the Web Store)
+run-tests.sh             checks that run without the extension loaded
+docs/media/              demo video and README preview
 ```
 
-## 검증
+## Tests
 
 ```bash
 ./run-tests.sh
 ```
 
-- `tests/i18n.test.mjs` — 언어별 키·치환자 일치, 코드가 쓰는 키 존재, en/es 에 한글 잔존 없음, 스토어 글자 수 제한
-- `tests/keys.test.mjs` — dedup 키 규칙 14케이스 (쿼리 무시, 파일명 모드, 한글/공백, 비대상 판정)
-- `tests/host.test.py` — 호스트를 Chrome 인 척 띄워 CLI→호스트→확장 왕복 실측
-- `tests/open_guard.test.py` — Node/셸 HTML 라우팅, 실패 시 직접 열기 금지, CLI 설치 충돌 검사
+- `tests/i18n.test.mjs` — keys and placeholders match across languages, every key the code uses exists, no Korean left in en/es, store length limits
+- `tests/keys.test.mjs` — 14 dedup-key cases (query ignored, file-name mode, Korean/spaces, non-target detection)
+- `tests/host.test.py` — starts the host pretending to be Chrome and measures a real CLI → host → extension round trip
+- `tests/open_guard.test.py` — Node/shell HTML routing, no direct open on failure, CLI install conflicts
 
-확장 안에서 도는 것(백그라운드 탭 생성, 포커스 복원, 탭그룹)은 브라우저에 로드해야 확인된다.
+What runs inside the extension (background tab creation, focus restore, tab groups) can only be verified with it loaded in a browser.
 
-## 알려진 한계
+## Known limits
 
-- **macOS 전용**. HTML이 아닌 파일의 `/usr/bin/open` 위임과 소켓 경로가 macOS 기준.
-- Chrome 창이 **하나도 없을 때** 여는 경우, 새 창은 `focused:false` 로 만들지만 OS가 앱을 앞으로 낼 수 있다.
-- 파일 내용이 바뀌어도 **자동 새로고침은 하지 않는다**. 같은 경로로 다시 `artifact-open` 하면 새로고침된다.
-- 네이티브 호스트는 확장이 켜져 있을 때만 산다. 연결이 없으면 CLI는 오류로 중단한다.
+- **macOS only.** Delegating non-HTML files to `/usr/bin/open` and the socket path assume macOS.
+- If **no Chrome window is open**, the new window is created with `focused:false`, but the OS may still bring the app forward.
+- It does **not auto-reload** when a file changes. Running `artifact-open` on the same path again reloads it.
+- The native host only lives while the extension is on. Without a connection, the CLI stops with an error.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
