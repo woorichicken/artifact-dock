@@ -54,6 +54,21 @@ cli2 = subprocess.run(["bash", CLI, "/tmp/dock 테스트/보고서 v2.html"],
 time.sleep(0.3)
 print("4) 한글+공백 경로 exit =", cli2.returncode, "url =", result.get("req", {}).get("url"))
 
+# 확장 → host 질의: 파일이 아직 있는가 (지워진 파일 정리용)
+print("5) host:ready caps =", ready.get("caps"))
+send_msg({"id": "ext-1", "cmd": "exists",
+          "paths": ["/tmp/dock-test-a.html", "/private/tmp/dock-test-a.html",
+                    "/tmp/dock 테스트/보고서 v2.html", "/tmp/dock-없는-파일.html", "relative.html"]})
+reply = read_msg()
+print("6) exists 응답 =", reply)
+want = {"/tmp/dock-test-a.html": True, "/private/tmp/dock-test-a.html": True,
+        "/tmp/dock 테스트/보고서 v2.html": True, "/tmp/dock-없는-파일.html": False}
+exists_ok = ("exists" in (ready.get("caps") or [])
+             and reply and reply.get("type") == "host:reply" and reply.get("id") == "ext-1"
+             and reply.get("exists") == want)
+print("   exists RESULT:", "PASS" if exists_ok else "FAIL")
+ok = ok and exists_ok
+
 p.stdin.close(); p.terminate()
 for f in ("/tmp/dock-test-a.html", "/tmp/dock 테스트/보고서 v2.html"):
     try: os.remove(f)

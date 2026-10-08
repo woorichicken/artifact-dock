@@ -4,6 +4,7 @@
 
 import { getConfig } from './lib/config.js';
 import { artifactKey, displayName, subLabel } from './lib/keys.js';
+import { matchesQuery } from './lib/search.js';
 import { t, applyI18n, copyAgentPrompt } from './lib/i18n.js';
 
 applyI18n();
@@ -15,6 +16,8 @@ const countEl = document.getElementById('count');
 let filter = '';
 // CLI(네이티브 호스트) 연결 여부. 모르는 동안은 연결된 것으로 두어 경고가 깜빡이지 않게 한다.
 let hostReady = true;
+// 파일이 지워진 문서의 키. 호스트에게 물어서 채운다(구버전 호스트면 늘 비어 있다).
+let missingKeys = new Set();
 
 async function collect() {
   const cfg = await getConfig();
@@ -60,24 +63,30 @@ async function collect() {
   const openKeys = new Set(byKey.keys());
 
   const { history = [] } = await chrome.storage.local.get('history');
-  const pinnedKeys = new Set(history.filter((h) => h.pinned).map((h) => h.key));
-  open.forEach((o) => (o.pinned = pinnedKeys.has(o.key)));
+  const byHistory = new Map(history.map((h) => [h.key, h]));
+  open.forEach((o) => {
+    o.pinned = !!byHistory.get(o.key)?.pinned;
+    o.at = byHistory.get(o.key)?.at ?? 0;
+  });
 
   const closed = history
     .filter((h) => !openKeys.has(h.key))
     .map((h) => ({ ...h, title: h.title, sub: subLabel(h.url), closed: true }));
 
-  // 핀 고정 → 그 외는 원래 순서
-  open.sort((a, b) => Number(b.pinned) - Number(a.pinned));
-  closed.sort((a, b) => Number(b.pinned) - Number(a.pinned));
+  // 📌 고정 → 최근에 열린(에이전트가 열거나 다시 쓴) 순.
+  // 예전에는 탭 순서 그대로였는데, solo 보기는 문서를 고를 때마다 탭을 그룹 밖으로 꺼냈다
+  // 넣으면서 탭 순서를 바꾼다 → 클릭할 때마다 목록이 뒤섞여 보였다. 고르는 동작으로는 바뀌지 않는
+  // 기준(at)으로 정렬해서 순서를 고정한다. 기록이 없는 탭은 맨 아래, 그 안에서는 나중에 연 탭이 위.
+  const byRecent = (a, b) =>
+    Number(b.pinned) - Number(a.pinned) || (b.at ?? 0) - (a.at ?? 0) || (b.tabId ?? 0) - (a.tabId ?? 0);
+  open.sort(byRecent);
+  closed.sort(byRecent);
 
   return { open, closed, openTabCount };
 }
 
 function matches(item) {
-  if (!filter) return true;
-  const hay = `${item.title} ${item.sub} ${item.url}`.toLowerCase();
-  return hay.includes(filter);
+  return matchesQuery(item, filter);
 }
 
 function el(tag, cls, text) {
@@ -88,8 +97,10 @@ function el(tag, cls, text) {
 }
 
 function makeRow(item) {
-  const row = el('div', 'row' + (item.isActive ? ' active' : '') + (item.closed ? ' closed' : '') + (item.pinned ? ' pinned' : ''));
-  row.title = item.url;
+  const missing = missingKeys.has(item.key);
+  const row = el('div', 'row' + (item.isActive ? ' active' : '') + (item.closed ? ' closed' : '') +
+    (item.pinned ? ' pinned' : '') + (missing ? ' missing' : ''));
+  row.title = missing ? `${t('missingTitle')}\n${item.url}` : item.url;
 
   if (item.favIconUrl && !item.closed) {
     const img = el('img', 'favicon');
@@ -104,6 +115,8 @@ function makeRow(item) {
   meta.append(el('div', 'name', item.title || t('untitled')));
   meta.append(el('div', 'sub', shortenPath(item.sub || '')));
   row.append(meta);
+
+  if (missing) row.append(el('span', 'tag', t('missingTag')));
 
   if (item.dupes?.length) {
     const badge = el('span', 'badge', `×${item.dupes.length + 1}`);
@@ -162,6 +175,11 @@ function iconBtn(label, title, onClick, extra = '') {
 }
 
 async function activate(item) {
+  if (item.closed && missingKeys.has(item.key)) {
+    // 열어 봐야 "파일을 찾을 수 없음" 페이지뿐이다
+    showToast(t('toastMissing'));
+    return;
+  }
   if (item.closed) {
     // 사용자가 직접 여는 것이므로 포커스 가드를 잠시 끄라고 백그라운드에 알린다.
     await chrome.runtime.sendMessage({ type: 'dock:openIntent' }).catch(() => {});
@@ -196,10 +214,36 @@ async function removeHistory(key) {
   render();
 }
 
+// render 는 탭 이벤트마다 불려서 한 번 클릭에도 서너 번 겹친다. 각자 await 하는 동안 끝나는 순서가
+// 뒤바뀌면 먼저 시작한(낡은) 결과가 나중에 그려질 수 있어서 마지막 요청만 그린다.
+// 그릴 내용이 이전과 같으면 DOM 을 건드리지 않는다(스크롤·호버가 그대로 남는다).
+let renderSeq = 0;
+let lastSignature = '';
+
+function signatureOf(sections) {
+  return JSON.stringify(sections.map(({ items, kind }) => [kind, items.map((i) =>
+    // 행의 클릭 핸들러가 tabId·dupes 를 붙잡고 있어서 그것까지 같아야 "같은 화면"이다
+    [i.key, i.url, i.title, i.sub, i.tabId, i.isActive, i.pinned, i.dupes ?? [], i.favIconUrl, missingKeys.has(i.key)])]));
+}
+
 async function render() {
+  const seq = ++renderSeq;
   const { open, closed } = await collect();
+  const cfg = await getConfig();
+  if (seq !== renderSeq) return; // 그 사이 더 새로운 render 가 시작됐다
+  drawList(open, closed);
+  drawCount(open, cfg);
+}
+
+function drawList(open, closed) {
   const shownOpen = open.filter(matches);
   const shownClosed = closed.filter(matches);
+  const signature = signatureOf([
+    { kind: 'open', items: shownOpen },
+    { kind: 'closed', items: shownClosed },
+  ]) + `|${filter}|${hostReady}`;
+  if (signature === lastSignature) return;
+  lastSignature = signature;
 
   listEl.replaceChildren();
 
@@ -226,9 +270,10 @@ async function render() {
       shownClosed.forEach((i) => listEl.append(makeRow(i)));
     }
   }
+}
 
+function drawCount(open, cfg) {
   const dupTotal = open.reduce((n, o) => n + o.dupes.length, 0);
-  const cfg = await getConfig();
   // 버전과 모드를 같이 보여준다 — 확장을 다시 로드했는지, 어떤 모드로 도는지
   // 물어보지 않고 바로 확인할 수 있어야 진단이 빨라진다.
   const mode = cfg.viewMode === 'solo' ? t('modeSolo') : t('modeExpand');
@@ -239,10 +284,13 @@ async function render() {
 
 // ── 이벤트 배선 ──────────────────────────────────────────────
 
-qEl.addEventListener('input', () => {
-  filter = qEl.value.trim().toLowerCase();
-  render();
-});
+// 한글 입력은 조합이 끝날 때 input 이 한 번 더 오지 않는 경우가 있어서 compositionend 도 듣는다.
+for (const type of ['input', 'compositionend']) {
+  qEl.addEventListener(type, () => {
+    filter = qEl.value;
+    render();
+  });
+}
 
 document.getElementById('settings').addEventListener('click', () => {
   chrome.runtime.openOptionsPage();
@@ -263,15 +311,15 @@ document.getElementById('sweep').addEventListener('click', async (e) => {
   btn.disabled = true;
   try {
     const res = await chrome.runtime.sendMessage({ type: 'dock:sweep' });
-    showToast(
-      res?.closed
-        ? t('toastSweepClosed', res.closed, res.grouped)
-        : t('toastSweepNone', res?.grouped ?? 0)
-    );
+    const base = res?.closed
+      ? t('toastSweepClosed', res.closed, res.grouped)
+      : t('toastSweepNone', res?.grouped ?? 0);
+    showToast(res?.removed ? `${base} · ${t('toastSweepMissing', res.removed)}` : base);
   } catch {
     showToast(t('toastSweepFail'));
   } finally {
     btn.disabled = false;
+    await refreshMissing();
     render();
   }
 });
@@ -291,8 +339,14 @@ chrome.runtime.onMessage.addListener((msg) => {
 });
 chrome.tabs.onActivated.addListener(render);
 chrome.tabs.onRemoved.addListener(render);
-chrome.tabs.onUpdated.addListener((_id, info) => {
-  if (info.title || info.favIconUrl || info.status === 'complete') render();
+// 다른 사이트 탭(제목에 안 읽음 수를 계속 바꾸는 메일·메신저 등)의 변화까지 받으면 목록을 계속 새로 만든다
+// (실측: 다른 탭 제목이 80ms 마다 바뀌면 2초에 39번). 주소가 바뀐 경우(목록에 들어오거나 빠질 수 있음)와
+// 아티팩트 탭만 본다.
+chrome.tabs.onUpdated.addListener(async (_id, info, tab) => {
+  if (info.url) return render();
+  if (!(info.title || info.favIconUrl || info.status === 'complete')) return;
+  const cfg = await getConfig();
+  if (artifactKey(tab.url || tab.pendingUrl || '', cfg, tab.title)) render();
 });
 
 // ── CLI 연결 상태 ─────────────────────────────────────────────
@@ -324,4 +378,24 @@ chrome.runtime.sendMessage({ type: 'dock:status' })
   .then((res) => setHostStatus(!!res?.hostReady))
   .catch(() => setHostStatus(false));
 
+// ── 지워진 파일 표시 ──────────────────────────────────────────
+// 확장은 파일이 있는지 직접 알 수 없어서 호스트에게 묻는다. 보고 있는 동안만 가끔 다시 묻는다.
+const MISSING_REFRESH_MS = 60 * 1000;
+
+async function refreshMissing() {
+  const res = await chrome.runtime.sendMessage({ type: 'dock:missing' }).catch(() => null);
+  const next = new Set(res?.supported ? res.keys : []);
+  const changed = next.size !== missingKeys.size || [...next].some((k) => !missingKeys.has(k));
+  missingKeys = next;
+  if (changed) render();
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refreshMissing();
+});
+setInterval(() => {
+  if (document.visibilityState === 'visible') refreshMissing();
+}, MISSING_REFRESH_MS);
+
 render();
+refreshMissing();

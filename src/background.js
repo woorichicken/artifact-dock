@@ -9,7 +9,8 @@
 // 꼭 필요한 것(직전 활성 탭)만 chrome.storage.session 에 적어둔다.
 
 import { getConfig } from './lib/config.js';
-import { artifactKey, displayName } from './lib/keys.js';
+import { artifactKey, displayName, filePathOf } from './lib/keys.js';
+import { planAgeCleanup, planMissingCleanup, missingKeysFrom } from './lib/cleanup.js';
 
 // ────────────────────────────────────────────────────────────
 // 직전 활성 탭 기억 (포커스 복원용)
@@ -300,6 +301,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     sweepAll().then(sendResponse);
     return true;
   }
+  if (msg?.type === 'dock:missing') {
+    // 사이드바가 "파일이 지워진 문서"를 흐리게 표시하려고 묻는다. 지우지는 않는다.
+    findMissingKeys().then(({ supported, keys }) => sendResponse({ supported, keys: [...keys] }));
+    return true;
+  }
+  if (msg?.type === 'dock:maintain') {
+    runMaintenance({ force: true }).then(sendResponse);
+    return true;
+  }
   if (msg?.type === 'dock:openIntent') {
     chrome.storage.session
       .set({ openIntentUntil: Date.now() + OPEN_INTENT_MS })
@@ -336,6 +346,11 @@ let nativePort = null;
 // connectNative() 는 호스트가 없어도 포트를 돌려준다. 그래서 "연결됨"은 호스트가 보낸
 // host:ready 를 받았을 때만 참이다.
 let hostReady = false;
+// 호스트가 할 줄 아는 명령. 구버전 호스트(0.4.0 이하)는 caps 를 안 보내므로 빈 목록이다.
+let hostCaps = [];
+// 확장 → 호스트 질의의 응답을 id 별로 기다리는 곳
+const hostWaiters = new Map();
+const HOST_ASK_TIMEOUT_MS = 3000;
 
 const HOST_READY_WAIT_MS = 800;
 
@@ -367,7 +382,15 @@ function connectHost() {
   }
 
   nativePort.onMessage.addListener(async (msg) => {
-    if (msg?.type === 'host:ready') { setHostReady(true); return; }
+    if (msg?.type === 'host:ready') {
+      hostCaps = Array.isArray(msg.caps) ? msg.caps : [];
+      setHostReady(true);
+      return;
+    }
+    if (msg?.type === 'host:reply') {
+      hostWaiters.get(msg.id)?.(msg);
+      return;
+    }
     if (!msg) return;
     if (msg.cmd !== 'open') return;
     let reply;
@@ -383,7 +406,32 @@ function connectHost() {
     const err = chrome.runtime.lastError?.message;
     if (err) console.warn('[ArtifactDock] native host 끊김:', err);
     nativePort = null;
+    hostCaps = [];
     setHostReady(false);
+    for (const resolve of hostWaiters.values()) resolve(null);
+  });
+}
+
+/** 호스트에게 직접 묻는다. 못 물으면(미연결·구버전·시간 초과) null. */
+async function askHost(cmd, payload) {
+  if (!nativePort) connectHost();
+  await waitHostReady(HOST_READY_WAIT_MS);
+  if (!nativePort || !hostCaps.includes(cmd)) return null;
+
+  const id = 'ext-' + crypto.randomUUID();
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => done(null), HOST_ASK_TIMEOUT_MS);
+    function done(reply) {
+      clearTimeout(timer);
+      hostWaiters.delete(id);
+      resolve(reply);
+    }
+    hostWaiters.set(id, done);
+    try {
+      nativePort.postMessage({ id, cmd, ...payload });
+    } catch {
+      done(null);
+    }
   });
 }
 
@@ -444,7 +492,9 @@ async function pickTargetWindow() {
 chrome.runtime.onInstalled.addListener(connectHost);
 chrome.runtime.onStartup.addListener(connectHost);
 chrome.alarms.onAlarm.addListener((a) => {
-  if (a.name === 'dock:keepalive') connectHost();
+  if (a.name !== 'dock:keepalive') return;
+  connectHost();
+  runMaintenance().catch((e) => console.warn('[ArtifactDock] 자동 정리 실패', e));
 });
 chrome.alarms.create('dock:keepalive', { periodInMinutes: 1 });
 connectHost();
@@ -518,10 +568,12 @@ async function gatherIntoGroup() {
 
 async function sweepAll() {
   const dup = await sweepDuplicates();
+  // 사람이 누른 정리라서 지워진 파일의 탭까지 닫는다 (자동 정리는 목록만 지운다)
+  const gone = await pruneMissing({ closeTabs: true });
   const grp = await gatherIntoGroup();
   await enforceTabLimit();
   notifyPanel();
-  return { ...dup, ...grp };
+  return { ...dup, ...grp, removed: gone.removed, missingSupported: gone.supported };
 }
 
 // 브라우저를 켤 때 한 번 정리 (설정에서 끌 수 있다)
@@ -531,6 +583,105 @@ async function sweepOnStartIfEnabled() {
 }
 chrome.runtime.onStartup.addListener(sweepOnStartIfEnabled);
 chrome.runtime.onInstalled.addListener(sweepOnStartIfEnabled);
+
+
+// ────────────────────────────────────────────────────────────
+// 목록 정리 — 지워진 파일 · 오래된 문서
+//
+// "무엇을 지울지"는 lib/cleanup.js 의 순수 함수가 정한다. 여기서는 탭·기록을 모아 넘기고 실행만 한다.
+// 공통 원칙: 📌 고정한 문서 · 지금 보고 있는 탭 · Chrome 고정 탭은 건드리지 않는다.
+// ────────────────────────────────────────────────────────────
+
+/** 아티팩트 탭을 규칙 함수가 읽는 모양으로 */
+async function artifactTabs(cfg) {
+  const tabs = await chrome.tabs.query({});
+  const out = [];
+  for (const t of tabs) {
+    const url = t.url || t.pendingUrl || '';
+    const key = artifactKey(url, cfg, t.title);
+    if (!key) continue;
+    out.push({ id: t.id, key, url, active: t.active, pinned: t.pinned, lastAccessed: t.lastAccessed });
+  }
+  return out;
+}
+
+/** 파일이 지워진 문서의 키. 호스트가 없거나 구버전이면 supported:false — 아무것도 지우지 않는다. */
+async function findMissingKeys() {
+  const cfg = await getConfig();
+  const { history = [] } = await chrome.storage.local.get('history');
+  const tabs = await artifactTabs(cfg);
+
+  const pathsByKey = new Map();
+  for (const { key, url } of [...history, ...tabs]) {
+    const path = filePathOf(url || '');
+    if (!path) continue; // claude.ai 아티팩트 등 파일이 아닌 것
+    if (!pathsByKey.has(key)) pathsByKey.set(key, new Set());
+    pathsByKey.get(key).add(path);
+  }
+  if (!pathsByKey.size) return { supported: true, keys: new Set(), history, tabs };
+
+  const paths = [...new Set([...pathsByKey.values()].flatMap((s) => [...s]))];
+  const reply = await askHost('exists', { paths });
+  if (!reply?.ok) return { supported: false, keys: new Set(), history, tabs };
+  return { supported: true, keys: new Set(missingKeysFrom(pathsByKey, reply.exists || {})), history, tabs };
+}
+
+/** 계획대로 탭을 닫고 기록을 지운다. */
+async function applyCleanup({ closeTabIds, dropKeys }) {
+  if (closeTabIds.length) await chrome.tabs.remove(closeTabIds).catch(() => {});
+  if (dropKeys.length) {
+    // 계산하는 동안 다른 경로(touchHistory)가 기록을 바꿨을 수 있어서 지우기 직전에 다시 읽는다.
+    const drop = new Set(dropKeys);
+    const { history = [] } = await chrome.storage.local.get('history');
+    await chrome.storage.local.set({ history: history.filter((h) => !drop.has(h.key)) });
+  }
+}
+
+/** 정리된 문서 수 (탭을 닫은 문서 + 목록에서 지운 문서, 같은 문서는 한 번) */
+function countRemoved(plan, tabs) {
+  const closing = new Set(plan.closeTabIds);
+  return new Set([...plan.dropKeys, ...tabs.filter((t) => closing.has(t.id)).map((t) => t.key)]).size;
+}
+
+async function pruneMissing({ closeTabs }) {
+  const { supported, keys, history, tabs } = await findMissingKeys();
+  if (!supported || !keys.size) return { supported, removed: 0 };
+  const plan = planMissingCleanup({ history, tabs, missingKeys: keys, closeTabs });
+  const removed = countRemoved(plan, tabs);
+  await applyCleanup(plan);
+  if (removed) console.log('[ArtifactDock] 지워진 파일', removed, '개를 목록에서 정리');
+  return { supported, removed };
+}
+
+async function pruneOld(days) {
+  const cfg = await getConfig();
+  const { history = [] } = await chrome.storage.local.get('history');
+  const tabs = await artifactTabs(cfg);
+  const plan = planAgeCleanup({ history, tabs, now: Date.now(), days });
+  const removed = countRemoved(plan, tabs);
+  await applyCleanup(plan);
+  if (removed) console.log('[ArtifactDock]', days, '일 지난 문서', removed, '개를 정리');
+  return removed;
+}
+
+// 서비스 워커는 수시로 죽었다 살아나므로 "한 시간에 한 번"은 마지막 실행 시각으로 판정한다.
+// (같은 이름의 알람을 깨어날 때마다 다시 만들면 타이머가 리셋돼서 영영 안 울릴 수 있다)
+const MAINTENANCE_EVERY_MS = 60 * 60 * 1000;
+
+async function runMaintenance({ force = false } = {}) {
+  const cfg = await getConfig();
+  const { lastMaintenanceAt = 0 } = await chrome.storage.local.get('lastMaintenanceAt');
+  if (!force && Date.now() - lastMaintenanceAt < MAINTENANCE_EVERY_MS) return { skipped: true };
+  await chrome.storage.local.set({ lastMaintenanceAt: Date.now() });
+
+  const days = Number(cfg.cleanupDays) || 0;
+  const old = days > 0 ? await pruneOld(days) : 0;
+  const gone = cfg.autoPruneMissing ? await pruneMissing({ closeTabs: false }) : { removed: 0 };
+  if (old || gone.removed) notifyPanel();
+  return { old, missing: gone.removed, missingSupported: gone.supported ?? null };
+}
+
+chrome.runtime.onStartup.addListener(() => runMaintenance({ force: true }));
 
 
 // ────────────────────────────────────────────────────────────

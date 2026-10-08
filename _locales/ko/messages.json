@@ -21,7 +21,7 @@
     "message": "정리"
   },
   "sweepTitle": {
-    "message": "같은 문서의 중복 탭을 닫고 그룹으로 모읍니다"
+    "message": "같은 문서의 중복 탭을 닫고, 파일이 지워진 항목을 지우고, 그룹으로 모읍니다"
   },
   "closeAll": {
     "message": "탭 비우기"
@@ -328,5 +328,37 @@
   },
   "optTrackClaudeDesc": {
     "message": "끄면 로컬 <code>file://</code> HTML 만 다룹니다."
+  },
+  "missingTag": {
+    "message": "삭제됨"
+  },
+  "missingTitle": {
+    "message": "파일이 지워졌습니다 — [정리]를 누르면 목록에서 지웁니다"
+  },
+  "toastMissing": {
+    "message": "파일이 지워져서 열 수 없습니다. [정리]로 목록에서 지울 수 있습니다"
+  },
+  "toastSweepMissing": {
+    "message": "지워진 파일 $ARG1$개 정리",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "optSecCleanup": {
+    "message": "목록 정리"
+  },
+  "optAutoPruneMissing": {
+    "message": "지워진 파일 자동 정리"
+  },
+  "optAutoPruneMissingDesc": {
+    "message": "/tmp 처럼 재부팅·정리로 사라지는 파일은 '최근 닫힘'에서 자동으로 지웁니다(한 시간에 한 번). 열려 있는 탭은 [정리]를 누를 때만 닫습니다. CLI(install.sh)가 0.5.0 이상이어야 합니다."
+  },
+  "optCleanupDays": {
+    "message": "오래된 문서 자동 정리 (일)"
+  },
+  "optCleanupDaysDesc": {
+    "message": "0 이면 끔. N일 동안 다시 열지도 보지도 않은 문서는 탭을 닫고 목록에서도 지웁니다(한 시간에 한 번). 📌 고정한 문서와 보고 있는 탭은 남깁니다."
   }
 }
