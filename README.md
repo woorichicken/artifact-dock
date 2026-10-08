@@ -227,6 +227,7 @@ bin/artifact-open        CLI. Exits nonzero on socket failure (never opens direc
 install.sh               native host registration + CLI links (--uninstall to remove)
 scripts/build-cws.sh     Web Store upload zip (manifest key removed) → dist/
 PRIVACY.md               privacy policy (required for the Web Store)
+docs/backlog.md          known small issues deferred on purpose, with evidence and a trigger
 run-tests.sh             checks that run without the extension loaded
 docs/media/              demo video and README preview
 ```

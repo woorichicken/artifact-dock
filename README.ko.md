@@ -212,6 +212,7 @@ bin/artifact-open        CLI. 소켓 실패 시 nonzero 중단(직접 열기 금
 install.sh               네이티브 호스트 등록 + CLI 링크 (--uninstall 로 제거)
 scripts/build-cws.sh     웹스토어 업로드용 zip (manifest key 제거) → dist/
 PRIVACY.md               개인정보 처리방침 (웹스토어 등록 필수)
+docs/backlog.md          일부러 미룬 작은 결함 (근거·다시 볼 조건과 함께)
 run-tests.sh             확장 없이 돌릴 수 있는 검증
 ```
 
