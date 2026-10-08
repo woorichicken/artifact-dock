@@ -21,7 +21,7 @@
     "message": "Ordenar"
   },
   "sweepTitle": {
-    "message": "Cierra las pestañas duplicadas del mismo documento y las agrupa"
+    "message": "Cierra las pestañas duplicadas del mismo documento, quita las entradas cuyo archivo se eliminó y las agrupa"
   },
   "closeAll": {
     "message": "Cerrar pestañas"
@@ -328,5 +328,37 @@
   },
   "optTrackClaudeDesc": {
     "message": "Si está desactivado, solo se gestiona HTML local <code>file://</code>."
+  },
+  "missingTag": {
+    "message": "Eliminado"
+  },
+  "missingTitle": {
+    "message": "El archivo se eliminó — Ordenar lo quita de la lista"
+  },
+  "toastMissing": {
+    "message": "Este archivo se eliminó y no se puede abrir. Ordenar lo quita de la lista"
+  },
+  "toastSweepMissing": {
+    "message": "se quitaron $ARG1$ archivos eliminados",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "optSecCleanup": {
+    "message": "Limpieza de la lista"
+  },
+  "optAutoPruneMissing": {
+    "message": "Quitar archivos eliminados automáticamente"
+  },
+  "optAutoPruneMissingDesc": {
+    "message": "Los archivos que desaparecen al reiniciar o limpiar (como /tmp) se quitan de Cerradas recientemente automáticamente (una vez por hora). Las pestañas abiertas solo se cierran al pulsar Ordenar. Requiere la CLI (install.sh) 0.5.0 o posterior."
+  },
+  "optCleanupDays": {
+    "message": "Quitar documentos antiguos automáticamente (días)"
+  },
+  "optCleanupDaysDesc": {
+    "message": "0 lo desactiva. Los documentos que no se reabren ni se ven durante N días se cierran y se quitan de la lista (una vez por hora). Los documentos fijados (📌) y la pestaña actual se mantienen."
   }
 }

@@ -8,6 +8,7 @@ const KEYS = [
   'dedupe', 'matchMode', 'reloadOnDuplicate', 'sweepOnStart',
   'focusGuard',
   'autoGroup', 'groupTitle', 'groupColor', 'collapseGroup', 'viewMode', 'maxOpenTabs',
+  'autoPruneMissing', 'cleanupDays',
   'trackClaudeArtifacts',
 ];
 

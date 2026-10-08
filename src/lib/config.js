@@ -25,6 +25,10 @@ export const DEFAULTS = {
   trackClaudeArtifacts: true, // claude.ai 아티팩트 URL 도 대상에 포함
   sweepOnStart: false,        // 브라우저를 켤 때 중복 탭을 자동 정리
   historyLimit: 50,
+
+  // 목록 자동 정리 (한 시간에 한 번 + 브라우저를 켤 때)
+  autoPruneMissing: true,     // 파일이 지워진 문서를 '최근 닫힘'에서 지운다. 열린 탭은 [정리]를 누를 때만 닫는다
+  cleanupDays: 0,             // 0 = 끔. N일 동안 열지도 보지도 않은 문서는 탭을 닫고 목록에서도 지운다
 };
 
 export async function getConfig() {

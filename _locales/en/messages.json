@@ -21,7 +21,7 @@
     "message": "Tidy up"
   },
   "sweepTitle": {
-    "message": "Close duplicate tabs of the same document and gather them into a group"
+    "message": "Close duplicate tabs of the same document, remove entries whose file was deleted, and gather them into a group"
   },
   "closeAll": {
     "message": "Close tabs"
@@ -328,5 +328,37 @@
   },
   "optTrackClaudeDesc": {
     "message": "When off, only local <code>file://</code> HTML is managed."
+  },
+  "missingTag": {
+    "message": "Deleted"
+  },
+  "missingTitle": {
+    "message": "The file was deleted — Tidy up removes it from the list"
+  },
+  "toastMissing": {
+    "message": "This file was deleted, so it can't be opened. Tidy up removes it from the list"
+  },
+  "toastSweepMissing": {
+    "message": "removed $ARG1$ deleted files",
+    "placeholders": {
+      "arg1": {
+        "content": "$1"
+      }
+    }
+  },
+  "optSecCleanup": {
+    "message": "List cleanup"
+  },
+  "optAutoPruneMissing": {
+    "message": "Remove deleted files automatically"
+  },
+  "optAutoPruneMissingDesc": {
+    "message": "Files that disappear on reboot or cleanup (like /tmp) are removed from Recently closed automatically (once an hour). Open tabs close only when you click Tidy up. Needs the CLI (install.sh) 0.5.0 or later."
+  },
+  "optCleanupDays": {
+    "message": "Remove old documents automatically (days)"
+  },
+  "optCleanupDaysDesc": {
+    "message": "0 turns it off. Documents not reopened or viewed for N days are closed and removed from the list (once an hour). Pinned (📌) documents and the tab you're viewing stay."
   }
 }

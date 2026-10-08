@@ -147,6 +147,17 @@ body {
 }
 .badge:hover { filter: brightness(1.15); }
 
+/* 파일이 지워진 문서. 클릭해도 열 수 없다는 걸 먼저 보여준다 */
+.row.missing .name { text-decoration: line-through; color: var(--muted); }
+.tag {
+  flex: 0 0 auto;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--hover);
+  color: var(--muted);
+}
+
 .toast {
   position: fixed;
   left: 10px; right: 10px; bottom: 44px;

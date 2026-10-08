@@ -119,6 +119,7 @@ Dedup works **only when opening**. For tabs that piled up before the extension w
 bottom of the side panel.
 
 - Keeps one tab per document and closes the rest (active tab > Chrome-pinned tab > most recently viewed)
+- Removes entries whose **file was deleted** (reports in `/tmp` disappear on reboot or cleanup) and closes their tabs
 - Gathers scattered artifact tabs into one tab group
 - Can run automatically **when the browser starts** (settings)
 
@@ -126,6 +127,31 @@ In the list, duplicates of the same document collapse into one row with a `×3` 
 that document's duplicates.
 
 > If reports with the same title but different file names keep piling up, set **Same-document rule → Document title**.
+
+### Deleted files and old documents
+
+The extension can't see whether a `file://` file still exists, so it asks the native host (it checks existence only and
+never reads the file). Entries whose file is gone are struck through with a **Deleted** tag; clicking one shows a notice
+instead of opening a "file not found" page.
+
+| Setting | Default | What runs (once an hour and when the browser starts) |
+|---|---|---|
+| Remove deleted files automatically | On | Drops deleted files from **Recently closed**. Open tabs close only when you press [Tidy up] |
+| Remove old documents automatically (days) | 0 (off) | Documents not reopened *or* viewed for N days: their tabs close and they leave the list |
+
+Pinned (📌) documents, the tab you're viewing and Chrome-pinned tabs are never removed.
+The existence check needs the **0.5.0 host** — after `git pull`, turn the extension off and on so the new host starts.
+With an older host nothing is marked or removed.
+
+## The side panel list
+
+- **Newest first** — sorted by when the document was last opened or rewritten by your agent, not by tab position.
+  Picking a document in the list doesn't reorder it (in "show one tab" mode the tab moves in and out of the group,
+  and the old tab-order list jumped around).
+- **Search** matches the title, folder and full path. Korean works even for macOS file names (stored decomposed, NFD),
+  and the last syllable you're still typing is matched loosely so results don't blink while composing.
+- The list redraws only when an artifact tab changes. Title updates in other sites' tabs (mail and chat unread counts)
+  no longer rebuild it.
 
 ## When the tab bar fills with favicons
 
@@ -166,7 +192,7 @@ are never closed. **[Close tabs]** at the bottom does the same: closes tabs, kee
 ./doctor.sh        # checks host registration, process, socket, CLI and Chrome in one go
 ```
 
-The bottom-left of the side panel shows **version and mode**, e.g. `26 open · solo · v0.4.0`.
+The bottom-left of the side panel shows **version and mode**, e.g. `26 open · solo · v0.5.0`.
 After changing the extension, check that this version went up first — if not, you didn't press ⟳ in
 `chrome://extensions`, and nothing you change will take effect.
 
@@ -181,6 +207,8 @@ After changing the extension, check that this version went up first — if not, 
 | When viewing from the side panel | Show one tab | Pull only that tab out of the group so the tab bar doesn't expand |
 | Maximum artifact tabs | 0 (unlimited) | Over the limit, the oldest close first (they stay in the list) |
 | Tidy up duplicates on startup | Off | Close duplicate tabs automatically when the browser starts |
+| Remove deleted files automatically | On | Drop entries whose file was deleted from Recently closed (needs the 0.5.0 host) |
+| Remove old documents automatically | 0 days (off) | Close and remove documents not opened or viewed for N days |
 | Claude artifacts | On | Also manage `claude.ai/code/artifact/…`, `/public/artifacts/…`, `claude.site/artifacts/…`. Off = local files only |
 
 ## Layout
@@ -190,6 +218,8 @@ manifest.json            extension manifest (fixed key → ID is always hanplflo
 src/background.js        dedup · focus restore · tab groups · native host connection
 src/lib/keys.js          the "same document?" rules (the heart of dedup)
 src/lib/config.js        settings defaults
+src/lib/search.js        side-panel search (NFC folding, Korean composition)
+src/lib/cleanup.js       which documents the deleted-file and old-document cleanup removes
 src/sidepanel.*          side-panel list UI
 src/options.*            settings page
 host/artifact_dock_host.py   bridge between the CLI (unix socket) and the extension (native messaging)
@@ -209,7 +239,10 @@ docs/media/              demo video and README preview
 
 - `tests/i18n.test.mjs` — keys and placeholders match across languages, every key the code uses exists, no Korean left in en/es, store length limits
 - `tests/keys.test.mjs` — 14 dedup-key cases (query ignored, file-name mode, Korean/spaces, non-target detection)
-- `tests/host.test.py` — starts the host pretending to be Chrome and measures a real CLI → host → extension round trip
+- `tests/search.test.mjs` — Korean search: NFD file names, percent-encoded folders, the syllable being composed
+- `tests/cleanup.test.mjs` — what cleanup removes and what it must keep (pinned, current tab, Chrome-pinned tabs)
+- `tests/host.test.py` — starts the host pretending to be Chrome and measures a real CLI → host → extension round trip,
+  plus the extension → host file-existence query
 - `tests/open_guard.test.py` — Node/shell HTML routing, no direct open on failure, CLI install conflicts
 
 What runs inside the extension (background tab creation, focus restore, tab groups) can only be verified with it loaded in a browser.
