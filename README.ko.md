@@ -171,6 +171,63 @@ Chrome 은 **접힌 그룹 안의 탭을 활성화하면 그룹을 통째로 펼
 | 다른 창의 탭 | 창을 넘겨 옮기지 않는다. 그 창에 그룹이 따로 생긴다 |
 | HTML 이 아닌 `file://` | PDF·이미지 등은 대상이 아니다 |
 
+## Chrome 웹스토어에 올리기 (관리자)
+
+`scripts/publish-cws.mjs` 가 `scripts/build-cws.sh` 로 만든 zip 을 올리고 심사에 제출한다.
+[Chrome Web Store API v2](https://developer.chrome.com/docs/webstore/using-api)(스코프
+`https://www.googleapis.com/auth/chromewebstore`)를 쓰고, 의존성 없이 Node 18+ `fetch` 만 쓴다.
+
+### 한 번 설정
+
+콘솔에서 할 일 (스크립트가 대신할 수 없다):
+
+1. **Google Cloud 콘솔** → 프로젝트를 만들거나 고르고 → API 및 서비스 → **Chrome Web Store API** 사용 설정.
+2. **OAuth 동의 화면**: 사용자 유형 **외부**, 앱 이름·이메일을 채우고, 스토어 항목을 가진 Google 계정을
+   **테스트 사용자**에 추가한다. 외부 + **테스트** 상태의 앱은 refresh token 이 7일 뒤 만료된다(Google 문서).
+   매주 6번을 다시 하기 싫으면 게시 상태를 **프로덕션**으로 바꾼다.
+3. **사용자 인증 정보 → 사용자 인증 정보 만들기 → OAuth 클라이언트 ID → 데스크톱 앱.** 데스크톱 클라이언트라야
+   도우미가 쓰는 루프백 리다이렉트(`http://127.0.0.1:<포트>`)가 허용된다. 클라이언트 ID·시크릿을 보관한다.
+4. **Chrome 웹스토어 개발자 대시보드 → 퍼블리셔 → 설정** → **퍼블리셔 ID** 를 복사한다. 게시하는 계정은
+   2단계 인증이 켜져 있어야 한다.
+
+그다음 터미널에서:
+
+5. 편집기로 `~/.config/artifact-dock/cws.env` 를 만든다 (저장소 밖, `chmod 600`):
+   ```bash
+   CWS_CLIENT_ID='…'
+   CWS_CLIENT_SECRET='…'
+   CWS_PUBLISHER_ID='…'
+   ```
+6. refresh token 을 한 번 받는다 — Google 로그인 주소를 출력하고 `127.0.0.1` 에서 기다렸다가, 승인되면
+   `CWS_REFRESH_TOKEN` 을 같은 파일에 권한 600 으로 적는다. 토큰 값은 출력하지 않는다(로그인 주소에는
+   클라이언트 ID 만 들어간다 — OAuth 가 어차피 브라우저로 보내는 공개값이다).
+   ```bash
+   (set -a; . ~/.config/artifact-dock/cws.env; set +a; node scripts/cws-auth.mjs)
+   ```
+
+### 매 릴리스 — 한 줄
+
+`manifest.json` 의 `version` 을 올린 뒤:
+
+```bash
+scripts/build-cws.sh && (set -a; . ~/.config/artifact-dock/cws.env; set +a; node scripts/publish-cws.mjs)
+```
+
+액세스 토큰 갱신 → 업로드 → 업로드가 `IN_PROGRESS` 면 끝날 때까지 확인 → 심사 제출 → 심사 상태
+(`PENDING_REVIEW` → `PUBLISHED`) 출력까지 한다. 실패하면 다음에 할 일이 담긴 문장으로 나온다
+(토큰 만료 · API 꺼짐 · 퍼블리셔 ID 틀림 · 버전 안 올림).
+
+| 옵션 | |
+|---|---|
+| `--dry-run` | 네트워크 없이 zip · 비어 있는 환경변수 · 보낼 요청만 보여 준다 |
+| `--status` | 지금 심사 상태만 본다 |
+| `--no-publish` | 업로드만 하고 제출하지 않는다 |
+| `--staged` | 승인 뒤 바로 게시하지 않고 대기(`STAGED_PUBLISH`) |
+| `--zip <경로>` | 다른 zip 을 올린다 (기본 `dist/artifact-dock-<버전>.zip`) |
+
+환경변수: `CWS_CLIENT_ID` · `CWS_CLIENT_SECRET` · `CWS_REFRESH_TOKEN` · `CWS_PUBLISHER_ID`, 선택으로
+`CWS_EXTENSION_ID`(기본 `nfifnjdpmjacfelfapgeibnnbkokceim` = 스토어 항목). 환경변수로만 받고 값은 출력하지 않는다.
+
 ## 문제가 생기면
 
 ```bash
@@ -211,6 +268,8 @@ host/artifact_dock_host.py   CLI(unix socket) ↔ 확장(native messaging) 다�
 bin/artifact-open        CLI. 소켓 실패 시 nonzero 중단(직접 열기 금지)
 install.sh               네이티브 호스트 등록 + CLI 링크 (--uninstall 로 제거)
 scripts/build-cws.sh     웹스토어 업로드용 zip (manifest key 제거) → dist/
+scripts/publish-cws.mjs  그 zip 을 올리고 심사에 제출 (Chrome Web Store API v2)
+scripts/cws-auth.mjs     refresh token 을 처음 한 번 받기 (루프백 OAuth, 저장소 밖에 저장)
 PRIVACY.md               개인정보 처리방침 (웹스토어 등록 필수)
 docs/backlog.md          일부러 미룬 작은 결함 (근거·다시 볼 조건과 함께)
 run-tests.sh             확장 없이 돌릴 수 있는 검증
@@ -228,6 +287,8 @@ run-tests.sh             확장 없이 돌릴 수 있는 검증
 - `tests/cleanup.test.mjs` — 정리가 지우는 것과 남겨야 하는 것(📌 고정 · 보고 있는 탭 · Chrome 고정 탭)
 - `tests/host.test.py` — 호스트를 Chrome 인 척 띄워 CLI→호스트→확장 왕복 실측 + 확장→호스트 파일 존재 확인
 - `tests/open_guard.test.py` — Node/셸 HTML 라우팅, 실패 시 직접 열기 금지, CLI 설치 충돌 검사
+- `tests/cws.test.mjs` — 가짜 `fetch` 로 웹스토어 스크립트 검사: 요청 순서·모양, `IN_PROGRESS` 대기,
+  사람이 읽을 실패 문장, 어떤 출력에도 자격증명 값 없음, 루프백 로그인 왕복
 
 확장 안에서 도는 것(백그라운드 탭 생성, 포커스 복원, 탭그룹)은 브라우저에 로드해야 확인된다.
 

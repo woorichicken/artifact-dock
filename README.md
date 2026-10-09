@@ -186,6 +186,64 @@ are never closed. **[Close tabs]** at the bottom does the same: closes tabs, kee
 | Tabs in another window | Not moved across windows; that window gets its own group |
 | Non-HTML `file://` | PDFs, images, etc. aren't managed |
 
+## Publishing to the Chrome Web Store (maintainers)
+
+`scripts/publish-cws.mjs` uploads the zip from `scripts/build-cws.sh` and submits it for review through the
+[Chrome Web Store API v2](https://developer.chrome.com/docs/webstore/using-api) (scope
+`https://www.googleapis.com/auth/chromewebstore`). No dependencies — Node 18+ `fetch`.
+
+### One-time setup
+
+In the consoles (scripts can't do this part):
+
+1. **Google Cloud Console** → create or pick a project → APIs & Services → enable **Chrome Web Store API**.
+2. **OAuth consent screen**: user type **External**, fill in app name and emails, and add the Google account that owns
+   the store listing under **Test users**. Google issues 7-day refresh tokens to External apps in **Testing** status;
+   switch the publishing status to **In production** if you don't want to re-run step 6 every week.
+3. **Credentials → Create credentials → OAuth client ID → Desktop app.** A desktop client allows the loopback
+   redirect (`http://127.0.0.1:<port>`) the helper uses. Keep the client ID and secret.
+4. **Chrome Web Store Developer Dashboard → Publisher → Settings** → copy the **Publisher ID**. The publishing account
+   needs 2-Step Verification.
+
+Then in a terminal:
+
+5. Create `~/.config/artifact-dock/cws.env` with an editor (not in the repo; `chmod 600` it):
+   ```bash
+   CWS_CLIENT_ID='…'
+   CWS_CLIENT_SECRET='…'
+   CWS_PUBLISHER_ID='…'
+   ```
+6. Get a refresh token once — it prints a Google sign-in URL, waits on `127.0.0.1`, and writes `CWS_REFRESH_TOKEN`
+   into the same file (mode 600). Token values are never printed; the sign-in URL contains only the client ID,
+   which OAuth sends through the browser anyway.
+   ```bash
+   (set -a; . ~/.config/artifact-dock/cws.env; set +a; node scripts/cws-auth.mjs)
+   ```
+
+### Every release — one line
+
+Bump `version` in `manifest.json`, then:
+
+```bash
+scripts/build-cws.sh && (set -a; . ~/.config/artifact-dock/cws.env; set +a; node scripts/publish-cws.mjs)
+```
+
+It refreshes the access token, uploads, waits while the upload is `IN_PROGRESS`, submits, and prints the review state
+(`PENDING_REVIEW` → `PUBLISHED`). Failures come back as a sentence with the next step (expired token, API not
+enabled, wrong publisher ID, version not bumped).
+
+| Option | |
+|---|---|
+| `--dry-run` | No network. Shows the zip, which variables are empty, and the requests it would send |
+| `--status` | Only print the current review state |
+| `--no-publish` | Upload without submitting |
+| `--staged` | After approval, wait for a manual publish (`STAGED_PUBLISH`) |
+| `--zip <path>` | Upload another zip (default `dist/artifact-dock-<version>.zip`) |
+
+Variables: `CWS_CLIENT_ID` · `CWS_CLIENT_SECRET` · `CWS_REFRESH_TOKEN` · `CWS_PUBLISHER_ID`, and optionally
+`CWS_EXTENSION_ID` (default `nfifnjdpmjacfelfapgeibnnbkokceim`, the store listing). The script reads them from the
+environment only and never prints their values.
+
 ## Troubleshooting
 
 ```bash
@@ -226,6 +284,8 @@ host/artifact_dock_host.py   bridge between the CLI (unix socket) and the extens
 bin/artifact-open        CLI. Exits nonzero on socket failure (never opens directly)
 install.sh               native host registration + CLI links (--uninstall to remove)
 scripts/build-cws.sh     Web Store upload zip (manifest key removed) → dist/
+scripts/publish-cws.mjs  upload that zip and submit it for review (Chrome Web Store API v2)
+scripts/cws-auth.mjs     get the refresh token once (loopback OAuth, saved outside the repo)
 PRIVACY.md               privacy policy (required for the Web Store)
 docs/backlog.md          known small issues deferred on purpose, with evidence and a trigger
 run-tests.sh             checks that run without the extension loaded
@@ -245,6 +305,8 @@ docs/media/              demo video and README preview
 - `tests/host.test.py` — starts the host pretending to be Chrome and measures a real CLI → host → extension round trip,
   plus the extension → host file-existence query
 - `tests/open_guard.test.py` — Node/shell HTML routing, no direct open on failure, CLI install conflicts
+- `tests/cws.test.mjs` — Web Store scripts with a fake `fetch`: request order and shape, waiting on `IN_PROGRESS`,
+  readable failures, no credential value in any output, loopback sign-in round trip
 
 What runs inside the extension (background tab creation, focus restore, tab groups) can only be verified with it loaded in a browser.
 

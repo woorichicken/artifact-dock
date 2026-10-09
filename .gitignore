@@ -7,3 +7,7 @@ host/extension-key.pem
 
 # 웹스토어 업로드 산출물 (scripts/build-cws.sh)
 dist/
+
+# 웹스토어 자격증명 (scripts/cws-auth.mjs 는 저장소 밖에 쓰지만, 손으로 만든 사본이 커밋되지 않게)
+cws.env
+*.cws.env
