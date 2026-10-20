@@ -11,6 +11,7 @@
 import { getConfig } from './lib/config.js';
 import { artifactKey, displayName, filePathOf } from './lib/keys.js';
 import { planAgeCleanup, planMissingCleanup, missingKeysFrom } from './lib/cleanup.js';
+import { DOCK_WINDOW_KEY, chooseTargetWindow } from './lib/windows.js';
 
 // ────────────────────────────────────────────────────────────
 // 직전 활성 탭 기억 (포커스 복원용)
@@ -201,7 +202,9 @@ async function groupTabs(tabIds, windowId, cfg) {
     if (groupId != null) {
       await chrome.tabs.group({ tabIds, groupId });
     } else {
-      groupId = await chrome.tabs.group({ tabIds });
+      // createProperties.windowId 를 빼면 Chrome 이 "현재 창"에 그룹을 만들면서 탭을 그 창으로 끌고 간다.
+      // 받는 창에 연 탭이 포커스된 다른 창으로 옮겨지던 원인이다(2026-10-20 실측).
+      groupId = await chrome.tabs.group({ tabIds, createProperties: { windowId } });
       await chrome.tabGroups.update(groupId, { title: cfg.groupTitle, color: cfg.groupColor });
     }
 
@@ -286,6 +289,10 @@ function notifyPanel() {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'dock:focus') {
     focusTab(msg.tabId).then(sendResponse);
+    return true;
+  }
+  if (msg?.type === 'dock:moveHere') {
+    moveTabHere(msg.tabId, msg.windowId).then(sendResponse);
     return true;
   }
   if (msg?.type === 'dock:status') {
@@ -477,14 +484,52 @@ async function openFromCli({ url, activate = false }) {
   return { ok: true, reused: false, tabId: tab.id };
 }
 
+// ────────────────────────────────────────────────────────────
+// 여러 창 — 새 문서를 어느 창에 열고, 이미 열린 문서를 어느 창으로 옮길지
+//
+// 지정이 없으면 "마지막으로 포커스된 창"에 연다. 창을 둘로 나눠 쓰면(터미널 옆 작은 창 +
+// 다른 모니터의 큰 창) 마지막에 어느 쪽을 만졌느냐에 따라 문서가 엉뚱한 창에 떨어진다.
+// 그래서 사이드바에서 받는 창을 지정하게 하고, 문서마다 "이 창으로" 옮길 수 있게 한다.
+// ────────────────────────────────────────────────────────────
+
 async function pickTargetWindow() {
+  const wins = await chrome.windows.getAll({ windowTypes: ['normal'] });
+  let lastFocusedId = null;
   try {
-    const win = await chrome.windows.getLastFocused({ windowTypes: ['normal'] });
-    return win?.id ?? null;
-  } catch {
-    const wins = await chrome.windows.getAll({ windowTypes: ['normal'] });
-    return wins[0]?.id ?? null;
+    lastFocusedId = (await chrome.windows.getLastFocused({ windowTypes: ['normal'] }))?.id ?? null;
+  } catch {}
+  const { [DOCK_WINDOW_KEY]: dockWindowId } = await chrome.storage.session.get(DOCK_WINDOW_KEY);
+  return chooseTargetWindow({ dockWindowId, windowIds: wins.map((w) => w.id), lastFocusedId });
+}
+
+// 받는 창을 닫으면 지정을 푼다. 남겨 두면 사이드바가 없는 창을 가리키는 상태가 된다.
+chrome.windows.onRemoved.addListener(async (windowId) => {
+  const { [DOCK_WINDOW_KEY]: dockWindowId } = await chrome.storage.session.get(DOCK_WINDOW_KEY);
+  if (dockWindowId === windowId) await chrome.storage.session.remove(DOCK_WINDOW_KEY);
+});
+
+/**
+ * 다른 창에 있는 문서 탭을 windowId 창(사이드바가 열린 창)으로 옮겨서 보여준다.
+ * 옮긴 뒤 같은 문서를 다시 열면 dedup 이 이 탭을 재사용하므로 문서는 계속 이 창에 남는다.
+ */
+async function moveTabHere(tabId, windowId) {
+  const cfg = await getConfig();
+  const tab = await getTab(tabId);
+  if (!tab) return { ok: false, error: '탭이 이미 닫혔습니다' };
+
+  if (tab.windowId !== windowId) {
+    try {
+      await chrome.tabs.move(tabId, { windowId, index: -1 });
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+    // 창을 넘으면 원래 그룹에서 빠진다. solo 보기는 보고 있는 탭을 그룹 밖에 두는 게 정상이고
+    // 벗어날 때 tidyStrayArtifactTabs 가 이 창의 그룹에 넣는다. 펼쳐 보기는 그 정리가 없으니 바로 넣는다.
+    if (cfg.autoGroup && cfg.viewMode !== 'solo') await groupTabs([tabId], windowId, cfg);
   }
+  const res = await focusTab(tabId);
+  notifyPanel();
+  return res;
 }
 
 // 서비스 워커가 죽었다 살아나도 다시 붙도록 여러 시점에 연결을 시도한다.

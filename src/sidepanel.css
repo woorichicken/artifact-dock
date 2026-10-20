@@ -157,6 +157,11 @@ body {
   background: var(--hover);
   color: var(--muted);
 }
+/* 다른 창에 열린 문서. 행에 마우스를 올리면 배경이 같은 색이 돼서 테두리로 구분한다 */
+.tag.other { background: transparent; border: 1px solid var(--line); }
+
+/* 📥 받는 창으로 지정된 창 */
+#dockHere.on { background: var(--accent-soft); outline: 1px solid var(--accent); }
 
 .toast {
   position: fixed;

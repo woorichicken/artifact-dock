@@ -7,6 +7,7 @@ cd "$(dirname "$0")"
 echo "── dedup 키 규칙"; node tests/keys.test.mjs
 echo; echo "── 검색 (한글·NFD)"; node tests/search.test.mjs
 echo; echo "── 목록 정리 규칙"; node tests/cleanup.test.mjs
+echo; echo "── 새 문서를 열 창"; node tests/windows.test.mjs
 echo; echo "── 다국어"; node tests/i18n.test.mjs
 echo; echo "── CLI ↔ 네이티브 호스트"; python3 tests/host.test.py
 echo; echo "── HTML 직접 열기 차단"; python3 tests/open_guard.test.py

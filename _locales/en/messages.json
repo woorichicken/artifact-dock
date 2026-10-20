@@ -360,5 +360,26 @@
   },
   "optCleanupDaysDesc": {
     "message": "0 turns it off. Documents not reopened or viewed for N days are closed and removed from the list (once an hour). Pinned (📌) documents and the tab you're viewing stay."
+  },
+  "dockHereOffTitle": {
+    "message": "Open new documents in this window (when you have several)"
+  },
+  "dockHereOnTitle": {
+    "message": "New documents open in this window — click to stop"
+  },
+  "toastDockOn": {
+    "message": "New documents will open in this window"
+  },
+  "toastDockOff": {
+    "message": "Cleared — new documents open in the last window you used"
+  },
+  "otherWindowTag": {
+    "message": "Other window"
+  },
+  "moveHere": {
+    "message": "Move to this window"
+  },
+  "toastMoveFail": {
+    "message": "Couldn’t move it — the tab may already be closed"
   }
 }
