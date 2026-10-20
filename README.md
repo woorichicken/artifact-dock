@@ -153,6 +153,21 @@ With an older host nothing is marked or removed.
 - The list redraws only when an artifact tab changes. Title updates in other sites' tabs (mail and chat unread counts)
   no longer rebuild it.
 
+## Several Chrome windows — choose where a document shows up
+
+Without a choice, new documents open in the **Chrome window that was focused last**. If you split Chrome — a small
+window next to the terminal and a big one on another monitor — documents land in whichever you touched last.
+Each window has its own side panel, so you choose from the panel of the window you want.
+
+| What | How |
+|---|---|
+| **Where new documents open** | 📥 in that window's side panel (shown only with two or more windows). The chosen window's button is outlined; click again to clear. Clicking it in another window moves the choice there |
+| **Bring an open document to this window** | Documents in another window carry an "Other window" tag. Hover the row and click ⤵ (Move to this window) |
+
+- A moved document stays put: when your agent reopens it (rewrites the same file), its tab in that window is reused,
+  whatever the receiving window is. The receiving window only decides where a document opens for the first time.
+- Closing the receiving window clears the choice. Window IDs change when the browser restarts, so the choice clears then too.
+
 ## When the tab bar fills with favicons
 
 Chrome **expands a collapsed group whenever a tab inside it is activated.** That can't be prevented, and Chrome
@@ -278,6 +293,7 @@ src/lib/keys.js          the "same document?" rules (the heart of dedup)
 src/lib/config.js        settings defaults
 src/lib/search.js        side-panel search (NFC folding, Korean composition)
 src/lib/cleanup.js       which documents the deleted-file and old-document cleanup removes
+src/lib/windows.js       which window a new document opens in (receiving window → last focused)
 src/sidepanel.*          side-panel list UI
 src/options.*            settings page
 host/artifact_dock_host.py   bridge between the CLI (unix socket) and the extension (native messaging)
@@ -302,6 +318,7 @@ docs/media/              demo video and README preview
 - `tests/keys.test.mjs` — 14 dedup-key cases (query ignored, file-name mode, Korean/spaces, non-target detection)
 - `tests/search.test.mjs` — Korean search: NFD file names, percent-encoded folders, the syllable being composed
 - `tests/cleanup.test.mjs` — what cleanup removes and what it must keep (pinned, current tab, Chrome-pinned tabs)
+- `tests/windows.test.mjs` — which window a new document opens in, falling back to the last focused one when the receiving window is gone
 - `tests/host.test.py` — starts the host pretending to be Chrome and measures a real CLI → host → extension round trip,
   plus the extension → host file-existence query
 - `tests/open_guard.test.py` — Node/shell HTML routing, no direct open on failure, CLI install conflicts

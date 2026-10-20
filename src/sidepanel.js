@@ -6,8 +6,12 @@ import { getConfig } from './lib/config.js';
 import { artifactKey, displayName, subLabel } from './lib/keys.js';
 import { matchesQuery } from './lib/search.js';
 import { t, applyI18n, copyAgentPrompt } from './lib/i18n.js';
+import { DOCK_WINDOW_KEY } from './lib/windows.js';
 
 applyI18n();
+
+// 사이드바는 창마다 따로 열린다. "이 창"은 이 사이드바가 붙은 창이다.
+const myWindowId = (await chrome.windows.getCurrent()).id;
 
 const listEl = document.getElementById('list');
 const qEl = document.getElementById('q');
@@ -117,6 +121,9 @@ function makeRow(item) {
   row.append(meta);
 
   if (missing) row.append(el('span', 'tag', t('missingTag')));
+  // 누르면 다른 창이 앞으로 튀어나온다 — 미리 알 수 있게 표시하고, 이 창으로 옮길 길을 준다
+  const inOtherWindow = !item.closed && item.windowId !== myWindowId;
+  if (inOtherWindow) row.append(el('span', 'tag other', t('otherWindowTag')));
 
   if (item.dupes?.length) {
     const badge = el('span', 'badge', `×${item.dupes.length + 1}`);
@@ -130,6 +137,16 @@ function makeRow(item) {
   }
 
   const actions = el('div', 'actions');
+  if (inOtherWindow) {
+    actions.append(iconBtn('⤵', t('moveHere'), async (e) => {
+      e.stopPropagation();
+      const res = await chrome.runtime
+        .sendMessage({ type: 'dock:moveHere', tabId: item.tabId, windowId: myWindowId })
+        .catch(() => null);
+      if (!res?.ok) showToast(t('toastMoveFail'));
+      render();
+    }, 'move-here'));
+  }
   actions.append(
     iconBtn(item.pinned ? '📌' : '📍', item.pinned ? t('unpin') : t('pin'), async (e) => {
       e.stopPropagation();
@@ -223,7 +240,7 @@ let lastSignature = '';
 function signatureOf(sections) {
   return JSON.stringify(sections.map(({ items, kind }) => [kind, items.map((i) =>
     // 행의 클릭 핸들러가 tabId·dupes 를 붙잡고 있어서 그것까지 같아야 "같은 화면"이다
-    [i.key, i.url, i.title, i.sub, i.tabId, i.isActive, i.pinned, i.dupes ?? [], i.favIconUrl, missingKeys.has(i.key)])]));
+    [i.key, i.url, i.title, i.sub, i.tabId, i.windowId, i.isActive, i.pinned, i.dupes ?? [], i.favIconUrl, missingKeys.has(i.key)])]));
 }
 
 async function render() {
@@ -339,6 +356,7 @@ chrome.runtime.onMessage.addListener((msg) => {
 });
 chrome.tabs.onActivated.addListener(render);
 chrome.tabs.onRemoved.addListener(render);
+chrome.tabs.onAttached.addListener(render); // 탭이 다른 창으로 옮겨짐(「이 창으로」 또는 드래그)
 // 다른 사이트 탭(제목에 안 읽음 수를 계속 바꾸는 메일·메신저 등)의 변화까지 받으면 목록을 계속 새로 만든다
 // (실측: 다른 탭 제목이 80ms 마다 바뀌면 2초에 39번). 주소가 바뀐 경우(목록에 들어오거나 빠질 수 있음)와
 // 아티팩트 탭만 본다.
@@ -377,6 +395,40 @@ document.getElementById('agentPrompt').addEventListener('click', async () => {
 chrome.runtime.sendMessage({ type: 'dock:status' })
   .then((res) => setHostStatus(!!res?.hostReady))
   .catch(() => setHostStatus(false));
+
+// ── 받는 창 ───────────────────────────────────────────────────
+// 지정이 없으면 새 문서는 "마지막으로 포커스된 창"에 열린다. 크롬 창을 나눠 쓰면 그게 매번 달라서
+// 문서가 엉뚱한 창에 떨어진다. 📥 를 누른 창이 받는 창이 되고, 백그라운드가 같은 키를 읽는다.
+const dockEl = document.getElementById('dockHere');
+
+async function drawDockButton() {
+  const wins = await chrome.windows.getAll({ windowTypes: ['normal'] });
+  const { [DOCK_WINDOW_KEY]: dockWindowId } = await chrome.storage.session.get(DOCK_WINDOW_KEY);
+  const isHere = dockWindowId === myWindowId;
+  // 창이 하나면 고를 게 없다. 단 지정돼 있는 동안은 풀 수 있게 남겨 둔다.
+  dockEl.hidden = wins.length < 2 && !isHere;
+  dockEl.classList.toggle('on', isHere);
+  dockEl.title = isHere ? t('dockHereOnTitle') : t('dockHereOffTitle');
+}
+
+dockEl.addEventListener('click', async () => {
+  const { [DOCK_WINDOW_KEY]: dockWindowId } = await chrome.storage.session.get(DOCK_WINDOW_KEY);
+  if (dockWindowId === myWindowId) {
+    await chrome.storage.session.remove(DOCK_WINDOW_KEY);
+    showToast(t('toastDockOff'));
+  } else {
+    await chrome.storage.session.set({ [DOCK_WINDOW_KEY]: myWindowId });
+    showToast(t('toastDockOn'));
+  }
+});
+
+// 다른 창의 사이드바에서 지정하거나, 받는 창이 닫혀 백그라운드가 지정을 풀어도 여기 표시가 따라온다
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'session' && DOCK_WINDOW_KEY in changes) drawDockButton();
+});
+chrome.windows.onCreated.addListener(drawDockButton);
+chrome.windows.onRemoved.addListener(drawDockButton);
+drawDockButton();
 
 // ── 지워진 파일 표시 ──────────────────────────────────────────
 // 확장은 파일이 있는지 직접 알 수 없어서 호스트에게 묻는다. 보고 있는 동안만 가끔 다시 묻는다.

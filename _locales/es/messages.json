@@ -360,5 +360,26 @@
   },
   "optCleanupDaysDesc": {
     "message": "0 lo desactiva. Los documentos que no se reabren ni se ven durante N días se cierran y se quitan de la lista (una vez por hora). Los documentos fijados (📌) y la pestaña actual se mantienen."
+  },
+  "dockHereOffTitle": {
+    "message": "Abrir los documentos nuevos en esta ventana (si tienes varias)"
+  },
+  "dockHereOnTitle": {
+    "message": "Los documentos nuevos se abren en esta ventana — haz clic para desactivarlo"
+  },
+  "toastDockOn": {
+    "message": "Los documentos nuevos se abrirán en esta ventana"
+  },
+  "toastDockOff": {
+    "message": "Desactivado: los documentos nuevos se abren en la última ventana que usaste"
+  },
+  "otherWindowTag": {
+    "message": "Otra ventana"
+  },
+  "moveHere": {
+    "message": "Mover a esta ventana"
+  },
+  "toastMoveFail": {
+    "message": "No se pudo mover: puede que la pestaña ya esté cerrada"
   }
 }
