@@ -155,17 +155,17 @@ With an older host nothing is marked or removed.
 
 ## Several Chrome windows — choose where a document shows up
 
-Without a choice, new documents open in the **Chrome window that was focused last**. If you split Chrome — a small
-window next to the terminal and a big one on another monitor — documents land in whichever you touched last.
-Each window has its own side panel, so you choose from the panel of the window you want.
+By default documents go to the **Chrome window you are looking at (focused last)**. New documents open there, and a
+document already open in another window follows to it when your agent reopens it. Pin a receiving window only if you
+split Chrome and want one side fixed. Each window has its own side panel.
 
 | What | How |
 |---|---|
 | **Where new documents open** | 📥 in that window's side panel (shown only with two or more windows). The chosen window's button is outlined; click again to clear. Clicking it in another window moves the choice there |
 | **Bring an open document to this window** | Documents in another window carry an "Other window" tag. Hover the row and click ⤵ (Move to this window) |
 
-- A moved document stays put: when your agent reopens it (rewrites the same file), its tab in that window is reused,
-  whatever the receiving window is. The receiving window only decides where a document opens for the first time.
+- When your agent reopens a document (rewrites the same file), its existing tab is reused; if it sits in another
+  window it is moved to the receiving window (the window you are looking at when none is pinned). Focus is not stolen.
 - Closing the receiving window clears the choice. Window IDs change when the browser restarts, so the choice clears then too.
 
 ## When the tab bar fills with favicons
