@@ -99,30 +99,15 @@ async function handleNewTab(tab, url) {
   const key = artifactKey(url, cfg, tab.title);
   if (!key) return; // 관리 대상이 아니면 아무것도 하지 않는다
 
-  // ── 0) 어느 창에서 열렸든 지금 쓰는 창으로 모은다
-  //  open 명령 등 외부에서 열린 탭은 크롬이 고른 창(터미널 옆 창 등)에 떨어진다. 사용자가 사이드바에서
-  //  직접 연 탭은 건드리지 않는다.
-  let existingForDedupe = null;
-  if (!(await isUserInitiated())) {
-    const hereId = await pickTargetWindow();
-    if (hereId != null) {
-      if (cfg.dedupe) {
-        existingForDedupe = await findTabByKey(key, cfg, tab.id);
-        if (existingForDedupe && existingForDedupe.windowId !== hereId
-            && await moveTabToWindow(existingForDedupe.id, hereId, cfg)) {
-          existingForDedupe = (await getTab(existingForDedupe.id)) ?? existingForDedupe;
-        }
-      }
-      if (!existingForDedupe && tab.windowId !== hereId && await moveTabToWindow(tab.id, hereId, cfg)) {
-        tab = (await getTab(tab.id)) ?? tab;
-      }
-    }
-  }
-
   // ── 1) 중복 판정
   if (cfg.dedupe) {
-    const existing = existingForDedupe ?? await findTabByKey(key, cfg, tab.id);
+    let existing = await findTabByKey(key, cfg, tab.id);
     if (existing) {
+      // 사용자가 지금 보는 창에서 연 것이다. 같은 문서가 다른 창에 있어도 그 창으로 건너가지 않고
+      // 기존 탭을 지금 창으로 가져온다 (새 탭은 아래에서 닫힌다).
+      if (existing.windowId !== tab.windowId && await moveTabToWindow(existing.id, tab.windowId, cfg)) {
+        existing = (await getTab(existing.id)) ?? existing;
+      }
       if (cfg.reloadOnDuplicate) {
         try { await chrome.tabs.reload(existing.id); } catch {}
       }
