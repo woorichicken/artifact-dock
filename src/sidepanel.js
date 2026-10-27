@@ -129,7 +129,7 @@ function makeRow(item) {
   row.append(meta);
 
   if (missing) row.append(el('span', 'tag', t('missingTag')));
-  // 누르면 다른 창이 앞으로 튀어나온다 — 미리 알 수 있게 표시하고, 이 창으로 옮길 길을 준다
+  // 누르면 이 창으로 옮겨 온다 — 다른 창에 있던 문서라는 걸 알 수 있게 표시만 남긴다
   const inOtherWindow = !item.closed && item.windowId !== myWindowId;
   if (inOtherWindow) row.append(el('span', 'tag other', t('otherWindowTag')));
 
@@ -212,7 +212,11 @@ async function activate(item) {
   } else {
     // 직접 activate 하지 않고 백그라운드에 맡긴다.
     // solo 모드면 그 탭만 그룹에서 꺼내야 해서 탭그룹 조작이 함께 필요하다.
-    const res = await chrome.runtime.sendMessage({ type: 'dock:focus', tabId: item.tabId }).catch(() => null);
+    // 다른 창에 있는 문서는 그 창으로 건너가지 않고 이 창으로 가져와서 보여준다 — 지금 보는 창이 기준이다.
+    const msg = item.windowId === myWindowId
+      ? { type: 'dock:focus', tabId: item.tabId }
+      : { type: 'dock:moveHere', tabId: item.tabId, windowId: myWindowId };
+    const res = await chrome.runtime.sendMessage(msg).catch(() => null);
     if (!res?.ok) {
       await chrome.tabs.update(item.tabId, { active: true }).catch(() => {});
       await chrome.windows.update(item.windowId, { focused: true }).catch(() => {});

@@ -162,7 +162,7 @@ split Chrome and want one side fixed. Each window has its own side panel.
 | What | How |
 |---|---|
 | **Where new documents open** | 📥 in that window's side panel (shown only with two or more windows). The chosen window's button is outlined; click again to clear. Clicking it in another window moves the choice there |
-| **Bring an open document to this window** | Documents in another window carry an "Other window" tag. Hover the row and click ⤵ (Move to this window) |
+| **Bring an open document to this window** | Documents in another window carry an "Other window" tag. Clicking the row brings the document **into this window** instead of jumping to the other one (⤵ does the same) |
 
 - When your agent reopens a document (rewrites the same file), its existing tab is reused; if it sits in another
   window it is moved to the receiving window (the window you are looking at when none is pinned). Focus is not stolen.
