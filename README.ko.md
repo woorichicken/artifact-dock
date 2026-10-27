@@ -277,7 +277,7 @@ src/lib/keys.js          "같은 문서인가" 판정 규칙 (dedup 의 핵심)
 src/lib/config.js        설정 기본값
 src/lib/search.js        사이드바 검색 (NFC 맞춤, 한글 조합 중 글자)
 src/lib/cleanup.js       지워진 파일·오래된 문서 정리가 무엇을 지울지
-src/lib/windows.js       새 문서를 열 창 (받는 창 → 마지막 포커스 창). 다른 창의 기존 문서도 재오픈 시 이 창으로 옮겨 온다
+src/lib/windows.js       새 문서를 열 창 (받는 창 → 사이드바가 열린 창 → 마지막 포커스 창). 다른 창의 기존 문서도 재오픈 시 이 창으로 옮겨 온다
 src/sidepanel.*          사이드바 목록 UI
 src/options.*            설정 화면
 host/artifact_dock_host.py   CLI(unix socket) ↔ 확장(native messaging) 다리

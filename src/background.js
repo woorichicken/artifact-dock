@@ -11,7 +11,7 @@
 import { getConfig } from './lib/config.js';
 import { artifactKey, displayName, filePathOf } from './lib/keys.js';
 import { planAgeCleanup, planMissingCleanup, missingKeysFrom } from './lib/cleanup.js';
-import { DOCK_WINDOW_KEY, chooseTargetWindow } from './lib/windows.js';
+import { DOCK_WINDOW_KEY, WINDOW_FOCUS_KEY, chooseTargetWindow } from './lib/windows.js';
 
 // ────────────────────────────────────────────────────────────
 // 직전 활성 탭 기억 (포커스 복원용)
@@ -504,8 +504,38 @@ async function pickTargetWindow() {
     lastFocusedId = (await chrome.windows.getLastFocused({ windowTypes: ['normal'] }))?.id ?? null;
   } catch {}
   const { [DOCK_WINDOW_KEY]: dockWindowId } = await chrome.storage.session.get(DOCK_WINDOW_KEY);
-  return chooseTargetWindow({ dockWindowId, windowIds: wins.map((w) => w.id), lastFocusedId });
+  const { [WINDOW_FOCUS_KEY]: focusAt = {} } = await chrome.storage.session.get(WINDOW_FOCUS_KEY);
+  return chooseTargetWindow({
+    dockWindowId,
+    windowIds: wins.map((w) => w.id),
+    lastFocusedId,
+    panelWindowIds: [...panelPorts.keys()],
+    focusAt,
+  });
 }
+
+// 사이드바가 열린 창을 알기 위한 연결. 사이드바를 닫으면 연결이 끊겨 목록에서 빠진다.
+// 서비스 워커가 죽어도 연결이 끊기므로 사이드바 쪽이 다시 붙는다.
+const panelPorts = new Map(); // windowId → Set<Port>
+chrome.runtime.onConnect.addListener((port) => {
+  const m = /^dock-panel:(\d+)$/.exec(port.name);
+  if (!m) return;
+  const windowId = Number(m[1]);
+  if (!panelPorts.has(windowId)) panelPorts.set(windowId, new Set());
+  panelPorts.get(windowId).add(port);
+  port.onDisconnect.addListener(() => {
+    const set = panelPorts.get(windowId);
+    set?.delete(port);
+    if (set && !set.size) panelPorts.delete(windowId);
+  });
+});
+
+chrome.windows.onFocusChanged.addListener(async (windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) return;
+  const { [WINDOW_FOCUS_KEY]: focusAt = {} } = await chrome.storage.session.get(WINDOW_FOCUS_KEY);
+  focusAt[windowId] = Date.now();
+  await chrome.storage.session.set({ [WINDOW_FOCUS_KEY]: focusAt });
+});
 
 // 받는 창을 닫으면 지정을 푼다. 남겨 두면 사이드바가 없는 창을 가리키는 상태가 된다.
 chrome.windows.onRemoved.addListener(async (windowId) => {
