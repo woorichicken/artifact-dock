@@ -449,8 +449,13 @@ async function openFromCli({ url, activate = false }) {
 
   // 이미 열려 있으면 새로고침만 한다 (= 창이 늘어나지 않는다)
   if (key && cfg.dedupe) {
-    const existing = await findTabByKey(key, cfg, -1);
+    let existing = await findTabByKey(key, cfg, -1);
     if (existing) {
+      // 다른 창에 있던 문서라도 지금 보는 창으로 따라온다 — 사이드바에서 ⤵ 를 누르게 하지 않는다
+      const hereId = await pickTargetWindow();
+      if (hereId != null && existing.windowId !== hereId) {
+        if (await moveTabToWindow(existing.id, hereId, cfg)) existing = await getTab(existing.id) ?? existing;
+      }
       if (cfg.reloadOnDuplicate) {
         try { await chrome.tabs.reload(existing.id); } catch {}
       }
@@ -487,9 +492,9 @@ async function openFromCli({ url, activate = false }) {
 // ────────────────────────────────────────────────────────────
 // 여러 창 — 새 문서를 어느 창에 열고, 이미 열린 문서를 어느 창으로 옮길지
 //
-// 지정이 없으면 "마지막으로 포커스된 창"에 연다. 창을 둘로 나눠 쓰면(터미널 옆 작은 창 +
-// 다른 모니터의 큰 창) 마지막에 어느 쪽을 만졌느냐에 따라 문서가 엉뚱한 창에 떨어진다.
-// 그래서 사이드바에서 받는 창을 지정하게 하고, 문서마다 "이 창으로" 옮길 수 있게 한다.
+// 기본은 "지금 보는(마지막으로 포커스된) 창"이다. 새 문서는 그 창에 열고, 다른 창에 이미 있던
+// 문서도 에이전트가 다시 열면 그 창으로 따라온다. 창을 둘로 나눠 한쪽에 고정하고 싶을 때만
+// 사이드바에서 받는 창을 지정하고, 문서마다 "이 창으로" 수동으로 옮길 수도 있다.
 // ────────────────────────────────────────────────────────────
 
 async function pickTargetWindow() {
@@ -517,19 +522,26 @@ async function moveTabHere(tabId, windowId) {
   const tab = await getTab(tabId);
   if (!tab) return { ok: false, error: '탭이 이미 닫혔습니다' };
 
-  if (tab.windowId !== windowId) {
-    try {
-      await chrome.tabs.move(tabId, { windowId, index: -1 });
-    } catch (e) {
-      return { ok: false, error: String(e) };
-    }
-    // 창을 넘으면 원래 그룹에서 빠진다. solo 보기는 보고 있는 탭을 그룹 밖에 두는 게 정상이고
-    // 벗어날 때 tidyStrayArtifactTabs 가 이 창의 그룹에 넣는다. 펼쳐 보기는 그 정리가 없으니 바로 넣는다.
-    if (cfg.autoGroup && cfg.viewMode !== 'solo') await groupTabs([tabId], windowId, cfg);
+  if (tab.windowId !== windowId && !(await moveTabToWindow(tabId, windowId, cfg))) {
+    return { ok: false, error: '탭을 옮기지 못했습니다' };
   }
   const res = await focusTab(tabId);
   notifyPanel();
   return res;
+}
+
+// 탭만 옮기고 포커스는 건드리지 않는다. 에이전트가 같은 문서를 다시 열 때(openFromCli)도 쓰므로
+// 앱이 튀어나오지 않아야 해서 활성화는 호출부가 정한다.
+async function moveTabToWindow(tabId, windowId, cfg) {
+  try {
+    await chrome.tabs.move(tabId, { windowId, index: -1 });
+  } catch {
+    return false;
+  }
+  // 창을 넘으면 원래 그룹에서 빠진다. solo 보기는 보고 있는 탭을 그룹 밖에 두는 게 정상이고
+  // 벗어날 때 tidyStrayArtifactTabs 가 이 창의 그룹에 넣는다. 펼쳐 보기는 그 정리가 없으니 바로 넣는다.
+  if (cfg.autoGroup && cfg.viewMode !== 'solo') await groupTabs([tabId], windowId, cfg);
+  return true;
 }
 
 // 서비스 워커가 죽었다 살아나도 다시 붙도록 여러 시점에 연결을 시도한다.
