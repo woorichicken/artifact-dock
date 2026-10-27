@@ -13,14 +13,6 @@ applyI18n();
 // 사이드바는 창마다 따로 열린다. "이 창"은 이 사이드바가 붙은 창이다.
 const myWindowId = (await chrome.windows.getCurrent()).id;
 
-// 백그라운드가 "사이드바가 열린 창"을 알게 한다 — 새 문서를 열 창을 고르는 근거다.
-// 서비스 워커가 죽으면 연결이 끊기므로 잠깐 뒤 다시 붙는다.
-function announcePanel() {
-  const port = chrome.runtime.connect({ name: `dock-panel:${myWindowId}` });
-  port.onDisconnect.addListener(() => setTimeout(announcePanel, 1000));
-}
-announcePanel();
-
 const listEl = document.getElementById('list');
 const qEl = document.getElementById('q');
 const countEl = document.getElementById('count');

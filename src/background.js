@@ -11,7 +11,7 @@
 import { getConfig } from './lib/config.js';
 import { artifactKey, displayName, filePathOf } from './lib/keys.js';
 import { planAgeCleanup, planMissingCleanup, missingKeysFrom } from './lib/cleanup.js';
-import { DOCK_WINDOW_KEY, WINDOW_FOCUS_KEY, chooseTargetWindow } from './lib/windows.js';
+import { DOCK_WINDOW_KEY, chooseTargetWindow } from './lib/windows.js';
 
 // ────────────────────────────────────────────────────────────
 // 직전 활성 탭 기억 (포커스 복원용)
@@ -454,13 +454,8 @@ async function openFromCli({ url, activate = false }) {
 
   // 이미 열려 있으면 새로고침만 한다 (= 창이 늘어나지 않는다)
   if (key && cfg.dedupe) {
-    let existing = await findTabByKey(key, cfg, -1);
+    const existing = await findTabByKey(key, cfg, -1);
     if (existing) {
-      // 다른 창에 있던 문서라도 지금 보는 창으로 따라온다 — 사이드바에서 ⤵ 를 누르게 하지 않는다
-      const hereId = await pickTargetWindow();
-      if (hereId != null && existing.windowId !== hereId) {
-        if (await moveTabToWindow(existing.id, hereId, cfg)) existing = await getTab(existing.id) ?? existing;
-      }
       if (cfg.reloadOnDuplicate) {
         try { await chrome.tabs.reload(existing.id); } catch {}
       }
@@ -497,9 +492,9 @@ async function openFromCli({ url, activate = false }) {
 // ────────────────────────────────────────────────────────────
 // 여러 창 — 새 문서를 어느 창에 열고, 이미 열린 문서를 어느 창으로 옮길지
 //
-// 기본은 "지금 보는(마지막으로 포커스된) 창"이다. 새 문서는 그 창에 열고, 다른 창에 이미 있던
-// 문서도 에이전트가 다시 열면 그 창으로 따라온다. 창을 둘로 나눠 한쪽에 고정하고 싶을 때만
-// 사이드바에서 받는 창을 지정하고, 문서마다 "이 창으로" 수동으로 옮길 수도 있다.
+// 지정이 없으면 "마지막으로 포커스된 창"에 연다. 창을 둘로 나눠 쓰면(터미널 옆 작은 창 +
+// 다른 모니터의 큰 창) 마지막에 어느 쪽을 만졌느냐에 따라 문서가 엉뚱한 창에 떨어진다.
+// 그래서 사이드바에서 받는 창을 지정하게 하고, 문서마다 "이 창으로" 옮길 수 있게 한다.
 // ────────────────────────────────────────────────────────────
 
 async function pickTargetWindow() {
@@ -509,38 +504,8 @@ async function pickTargetWindow() {
     lastFocusedId = (await chrome.windows.getLastFocused({ windowTypes: ['normal'] }))?.id ?? null;
   } catch {}
   const { [DOCK_WINDOW_KEY]: dockWindowId } = await chrome.storage.session.get(DOCK_WINDOW_KEY);
-  const { [WINDOW_FOCUS_KEY]: focusAt = {} } = await chrome.storage.session.get(WINDOW_FOCUS_KEY);
-  return chooseTargetWindow({
-    dockWindowId,
-    windowIds: wins.map((w) => w.id),
-    lastFocusedId,
-    panelWindowIds: [...panelPorts.keys()],
-    focusAt,
-  });
+  return chooseTargetWindow({ dockWindowId, windowIds: wins.map((w) => w.id), lastFocusedId });
 }
-
-// 사이드바가 열린 창을 알기 위한 연결. 사이드바를 닫으면 연결이 끊겨 목록에서 빠진다.
-// 서비스 워커가 죽어도 연결이 끊기므로 사이드바 쪽이 다시 붙는다.
-const panelPorts = new Map(); // windowId → Set<Port>
-chrome.runtime.onConnect.addListener((port) => {
-  const m = /^dock-panel:(\d+)$/.exec(port.name);
-  if (!m) return;
-  const windowId = Number(m[1]);
-  if (!panelPorts.has(windowId)) panelPorts.set(windowId, new Set());
-  panelPorts.get(windowId).add(port);
-  port.onDisconnect.addListener(() => {
-    const set = panelPorts.get(windowId);
-    set?.delete(port);
-    if (set && !set.size) panelPorts.delete(windowId);
-  });
-});
-
-chrome.windows.onFocusChanged.addListener(async (windowId) => {
-  if (windowId === chrome.windows.WINDOW_ID_NONE) return;
-  const { [WINDOW_FOCUS_KEY]: focusAt = {} } = await chrome.storage.session.get(WINDOW_FOCUS_KEY);
-  focusAt[windowId] = Date.now();
-  await chrome.storage.session.set({ [WINDOW_FOCUS_KEY]: focusAt });
-});
 
 // 받는 창을 닫으면 지정을 푼다. 남겨 두면 사이드바가 없는 창을 가리키는 상태가 된다.
 chrome.windows.onRemoved.addListener(async (windowId) => {
@@ -565,8 +530,8 @@ async function moveTabHere(tabId, windowId) {
   return res;
 }
 
-// 탭만 옮기고 포커스는 건드리지 않는다. 에이전트가 같은 문서를 다시 열 때(openFromCli)도 쓰므로
-// 앱이 튀어나오지 않아야 해서 활성화는 호출부가 정한다.
+// 탭만 옮기고 활성화는 호출부가 정한다. ⤵·사이드바 클릭(moveTabHere)과
+// 주소창에서 직접 연 문서가 다른 창에 있을 때(handleNewTab)가 함께 쓴다.
 async function moveTabToWindow(tabId, windowId, cfg) {
   try {
     await chrome.tabs.move(tabId, { windowId, index: -1 });
