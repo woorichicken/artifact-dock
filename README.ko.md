@@ -72,6 +72,22 @@ artifact-open --status
 
 사이드바는 툴바 아이콘 클릭 또는 `Cmd+Shift+U`.
 
+### 다른 프로그램에서 목록 읽기 (0.7.0)
+
+소켓(`~/Library/Application Support/ArtifactDock/dock.sock`, 내 계정만)에 한 줄 보내면 한 줄이 돌아온다.
+
+```jsonc
+{"cmd":"list","v":1}
+{"id":"…","ok":true,"protocol":1,"extVersion":"0.7.0","missingSupported":true,
+ "open":[{"key":"file:/…/a.html","url":"file:///…/a.html","title":"…","sub":"~/…","at":1793000000000,"pinned":true,"missing":false,"sessionId":"…"}],
+ "closed":[…]}
+```
+
+행은 사이드바 순서 그대로다. 둘이 같은 함수(`src/lib/dockList.js`)를 쓰므로 받는 쪽은 다시 정렬하지 않고 받은 대로 그린다.
+`list` 는 읽기만 한다 — 탭·창·`at` 을 바꾸지 않는다. 구판 확장은 답하지 않는다(8초 뒤 호스트가 `ok:false`).
+`artifact-open` 은 환경변수 `CLIMANAGER_SESSION_ID` 가 있으면 `sessionId` 로 싣는다. 마지막으로 id 를 갖고 연 세션이 이기고,
+id 없이 다시 열면 이전 값을 지킨다.
+
 ### 에이전트에게 설정 맡기기
 
 설치 안내 4단계(또는 사이드바 🤖)에서 **설정 프롬프트**를 복사해 Claude Code·Codex 대화에 붙여넣는다.

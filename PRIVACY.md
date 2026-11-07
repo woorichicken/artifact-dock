@@ -18,6 +18,9 @@ The optional companion CLI (`artifact-open`) talks to the extension through Chro
 and a Unix socket **on your own machine**. It only sends a file path to open. Nothing leaves your computer.
 Since 0.5.0 the extension can also ask that local host whether the files in its list still exist, so it can mark and
 remove deleted ones. The host checks existence only — it never reads, uploads or changes the files.
+Since 0.7.0 a program on your own machine that can reach that socket (owner-only, mode `0600`) can ask for the same list
+the side panel shows (titles, addresses, pins, which terminal session opened a document), and `artifact-open` records the
+session id of the CLI Manager terminal it ran in, if any. That id stays in the extension's local storage.
 
 ## Network
 

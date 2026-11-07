@@ -84,6 +84,22 @@ artifact-open --status
 
 Open the side panel with the toolbar icon or `Cmd+Shift+U`.
 
+### Reading the list from another program (0.7.0)
+
+Send one line to the socket (`~/Library/Application Support/ArtifactDock/dock.sock`, owner-only) and read one line back:
+
+```jsonc
+{"cmd":"list","v":1}
+{"id":"…","ok":true,"protocol":1,"extVersion":"0.7.0","missingSupported":true,
+ "open":[{"key":"file:/…/a.html","url":"file:///…/a.html","title":"…","sub":"~/…","at":1793000000000,"pinned":true,"missing":false,"sessionId":"…"}],
+ "closed":[…]}
+```
+
+The rows are in the side panel's order — both call the same function (`src/lib/dockList.js`), so draw them as they come
+instead of sorting again. `list` only reads: no tab, window or `at` changes. An older extension does not answer it (the
+host replies `ok:false` after 8 seconds). `artifact-open` adds `sessionId` when `CLIMANAGER_SESSION_ID` is set in its
+environment; the last open that carried one wins, and opening again without one keeps it.
+
 ### Let your agent set it up
 
 Copy the **setup prompt** from step 4 of the setup tab (or 🤖 in the side panel) and paste it into a Claude Code or
