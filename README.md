@@ -4,7 +4,7 @@
 > **Artifact Dock keeps every agent-generated HTML page in one place**: opened in a background tab,
 > one tab per document, listed in a side panel. Your focus stays where you were typing.
 
-**[Chrome Web Store](https://chromewebstore.google.com/detail/artifact-dock/nfifnjdpmjacfelfapgeibnnbkokceim)** ·
+**[Website](https://artifact-dock.solhun.com)** · **[Chrome Web Store](https://chromewebstore.google.com/detail/artifact-dock/nfifnjdpmjacfelfapgeibnnbkokceim)** ·
 Open source (MIT) · macOS · [Privacy policy](PRIVACY.md) · [한국어](README.ko.md)
 
 [![Artifact Dock demo — without it, every `open` pulls Chrome to the front and the tab bar fills up (18 tabs from 4 sessions). With it, pages open quietly beside the terminal and land in one side panel.](docs/media/artifact-dock-demo.gif)](docs/media/artifact-dock-demo.mp4)
