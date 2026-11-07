@@ -1,6 +1,6 @@
 // 사이드바와 `list` 명령이 같이 쓰는 목록 규칙. 순서가 갈리면 폰의 Dock 이 사이드바와 달라진다.
 import fs from 'node:fs';
-import { buildDockList, listRow, sessionIdFrom, DOCK_LIST_PROTOCOL } from '../src/lib/dockList.js';
+import { buildDockList, docSessionKey, listRow, rememberDocSession, sessionIdFrom, DOCK_LIST_PROTOCOL, DOC_SESSIONS_MAX } from '../src/lib/dockList.js';
 
 let fail = 0;
 const eq = (label, got, want) => {
@@ -54,14 +54,20 @@ const titles = (rows) => rows.map((r) => r.title);
   eq('닫힌 표시', closed.every((c) => c.closed === true), true);
 }
 
-// sessionId 는 기록에서 온다 — 열린 문서·닫힌 문서 모두
+// sessionId 는 기록과 따로 둔 표에서 주소로 찾는다 — 열린 문서·닫힌 문서·기록에 없는 열린 문서 모두
 {
   const { open, closed } = buildDockList({
-    tabs: [tab(1, 'a')],
-    history: [hist('a', 10, { sessionId: 's-open' }), hist('b', 5, { sessionId: 's-closed' }), hist('c', 1)],
+    tabs: [tab(1, 'a'), tab(2, 'off-history')],
+    history: [hist('a', 10), hist('b', 5), hist('c', 1)],
     activeId: 1,
     cfg,
+    sessions: {
+      [docSessionKey(file('a'))]: 's-open',
+      [docSessionKey(file('b'))]: 's-closed',
+      [docSessionKey(file('off-history'))]: 's-beyond-limit',
+    },
   });
+  eq('기록에서 빠진 열린 문서도 세션이 남는다', open[1].sessionId, 's-beyond-limit');
   eq('열린 문서의 sessionId', open[0].sessionId, 's-open');
   eq('닫힌 문서의 sessionId', closed[0].sessionId, 's-closed');
   eq('없으면 없음', closed[1].sessionId, undefined);
@@ -71,15 +77,30 @@ const titles = (rows) => rows.map((r) => r.title);
 {
   const { open, closed } = buildDockList({
     tabs: [tab(7, 'a', { favIconUrl: 'data:image/png;base64,AAAA' })],
-    history: [hist('a', 10, { sessionId: 's1' }), hist('b', 5)],
+    history: [hist('a', 10), hist('b', 5)],
     activeId: 7,
     cfg,
+    sessions: { [docSessionKey(file('a'))]: 's1' },
   });
   const missing = new Set([key('b')]);
   eq('열린 행 칸', Object.keys(listRow(open[0], missing)).sort(), ['at', 'key', 'missing', 'pinned', 'sessionId', 'sub', 'title', 'url']);
   eq('탭·창·활성·파비콘은 안 나간다', ['tabId', 'windowId', 'isActive', 'favIconUrl', 'dupes'].some((k) => k in listRow(open[0], missing)), false);
   eq('닫힌 행 지워짐 표시', listRow(closed[0], missing).missing, true);
   eq('세션 없는 행은 칸이 없다', 'sessionId' in listRow(closed[0], missing), false);
+}
+
+// 세션 표의 키: 쿼리·해시·/private 를 무시한다(같은 문서는 같은 줄)
+eq('쿼리·해시 무시', docSessionKey('file:///tmp/a.html?t=1#x'), docSessionKey('file:///private/tmp/a.html'));
+eq('아티팩트 쿼리 무시', docSessionKey('https://claude.ai/code/artifact/1?via=x'), 'https://claude.ai/code/artifact/1');
+eq('이상한 주소는 그대로', docSessionKey('not a url'), 'not a url');
+{
+  let table = {};
+  for (let i = 0; i < DOC_SESSIONS_MAX + 5; i++) table = rememberDocSession(table, file(`d${i}`), `s${i}`);
+  eq('세션 표 상한', Object.keys(table).length, DOC_SESSIONS_MAX);
+  eq('가장 오래된 것부터 빠진다', table[docSessionKey(file('d0'))], undefined);
+  table = rememberDocSession(table, file('d5'), 'again');
+  table = rememberDocSession(table, file('new'), 'n');
+  eq('다시 쓴 것은 안 빠진다', table[docSessionKey(file('d5'))], 'again');
 }
 
 // sessionId 검사: 터미널 환경변수에서 오는 글이라 그대로 믿지 않는다

@@ -1,7 +1,7 @@
 // 목록의 순서·묶음을 정하는 곳. 사이드바와 소켓 `list` 명령이 같은 함수를 쓴다.
 // 정렬을 두 곳에 두면 폰의 Dock 이 사이드바와 어긋나므로, 받는 쪽(폰)은 정렬 코드를 갖지 않는다.
 
-import { artifactKey, displayName, subLabel } from './keys.js';
+import { artifactKey, displayName, filePathOf, subLabel } from './keys.js';
 
 /** `list` 응답 모양의 번호. 받는 쪽은 이 값이 다르면 구판으로 본다. */
 export const DOCK_LIST_PROTOCOL = 1;
@@ -13,7 +13,37 @@ export function sessionIdFrom(value) {
   return typeof value === 'string' && SESSION_ID.test(value) ? value : undefined;
 }
 
-export function buildDockList({ tabs, history, activeId, cfg }) {
+/**
+ * 어느 세션이 연 문서인지는 기록(history)과 따로 둔다. 기록은 상한(기본 50)에서 잘리는데 탭은 무제한이라
+ * 오래 열어 둔 문서가 먼저 빠지고, 제목 기준 모드에서는 열린 탭의 키가 기록의 키와 달라진다.
+ * 그래서 키가 아니라 문서의 주소로 찾는다. 쿼리·해시는 keys.js 와 같은 이유로 버린다.
+ */
+export const DOC_SESSIONS_KEY = 'docSessions';
+export const DOC_SESSIONS_MAX = 500;
+
+export function docSessionKey(url) {
+  const path = filePathOf(url);
+  if (path) return 'file:' + path;
+  try {
+    const u = new URL(url);
+    return u.origin + u.pathname;
+  } catch {
+    return url;
+  }
+}
+
+/** 가장 최근에 쓴 것이 뒤로 가게 넣고, 넘치면 가장 오래 안 쓴 것부터 뺀다. */
+export function rememberDocSession(sessions, url, sessionId) {
+  const key = docSessionKey(url);
+  const next = { ...sessions };
+  delete next[key];
+  next[key] = sessionId;
+  const keys = Object.keys(next);
+  for (const old of keys.slice(0, Math.max(0, keys.length - DOC_SESSIONS_MAX))) delete next[old];
+  return next;
+}
+
+export function buildDockList({ tabs, history, activeId, cfg, sessions = {} }) {
   // 같은 문서를 가리키는 탭이 여러 개면 한 줄로 묶는다.
   // (목록에까지 중복이 그대로 보이면 사이드바를 만든 의미가 없다)
   const byKey = new Map();
@@ -57,7 +87,6 @@ export function buildDockList({ tabs, history, activeId, cfg }) {
     const h = byHistory.get(o.key);
     o.pinned = !!h?.pinned;
     o.at = h?.at ?? 0;
-    if (h?.sessionId) o.sessionId = h.sessionId;
   });
 
   const closed = history
@@ -72,6 +101,11 @@ export function buildDockList({ tabs, history, activeId, cfg }) {
     Number(b.pinned) - Number(a.pinned) || (b.at ?? 0) - (a.at ?? 0) || (b.tabId ?? 0) - (a.tabId ?? 0);
   open.sort(byRecent);
   closed.sort(byRecent);
+
+  for (const item of [...open, ...closed]) {
+    const sessionId = sessions[docSessionKey(item.url)];
+    if (sessionId) item.sessionId = sessionId;
+  }
 
   return { open, closed, openTabCount };
 }

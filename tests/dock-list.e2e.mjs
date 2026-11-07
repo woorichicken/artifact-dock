@@ -163,8 +163,9 @@ try {
 
   // ── 사이드바 DOM 순서 = list 응답 순서
   const domOrder = async () => {
-    await panel.evaluate(() => chrome.runtime.sendMessage({ type: 'dock:refresh' }).catch(() => {}));
-    await sleep(300);
+    // 자기가 보낸 메시지는 자기에게 안 오고, 설정 변경은 탭 이벤트가 아니라서 다시 불러 그리게 한다
+    await panel.reload();
+    await sleep(500);
     return panel.evaluate(() => [...document.querySelectorAll('#list .row')].map((r) => r.querySelector('.name').textContent));
   };
   const reply = await list();
@@ -181,7 +182,8 @@ try {
       return {
         tabs: tabs.map((t) => [t.id, t.windowId, t.index, t.active, t.groupId, t.url, t.status]),
         windows: windows.map((w) => [w.id, w.focused]),
-        history: history.map((h) => [h.key, h.at, h.pinned, h.sessionId]),
+        history: history.map((h) => [h.key, h.at, h.pinned]),
+        sessions: (await chrome.storage.local.get('docSessions')).docSessions,
       };
     });
   const before = await snapshot();
@@ -189,7 +191,7 @@ try {
   for (let i = 0; i < 20; i++) times.push((await ask('{"cmd":"list","v":1}\n')).ms);
   const after = await snapshot();
   check('list 20회 뒤 탭·창·활성 탭 그대로', JSON.stringify(before.tabs) === JSON.stringify(after.tabs) && JSON.stringify(before.windows) === JSON.stringify(after.windows));
-  check('list 20회 뒤 기록(at) 그대로', JSON.stringify(before.history) === JSON.stringify(after.history));
+  check('list 20회 뒤 기록(at)·세션 그대로', JSON.stringify(before.history) === JSON.stringify(after.history) && JSON.stringify(before.sessions) === JSON.stringify(after.sessions));
   times.sort((a, b) => a - b);
   console.log(`     실측 왕복(실제 확장, ${allRows.length}행): 중앙값 ${times[10].toFixed(1)}ms · 최대 ${times[19].toFixed(1)}ms`);
   check('왕복이 2.5초 안', times[19] < 2500);
@@ -224,6 +226,34 @@ try {
   now = await list();
   const lost = burst.filter((name) => now.open.find((r) => nameOf(r) === name)?.sessionId !== `session-${name}`);
   check('빠르게 연 문서도 세션을 안 잃는다', lost.length === 0, lost.join());
+
+  // 세션은 기록 상한과 제목 모드에 묶이면 안 된다 — 기본값이 탭 무제한 · 기록 50개라 오래 열어 둔 문서가 기록에서 먼저 빠진다
+  await sw.evaluate(async () => chrome.storage.local.set({ config: { historyLimit: 3 } }));
+  for (const name of ['h1', 'h2', 'h3', 'h4', 'h5']) {
+    writeDoc(name);
+    artifactOpen(name, `session-${name}`);
+    await sleep(120);
+  }
+  await sleep(600);
+  now = await list();
+  const oldest = now.open.find((r) => nameOf(r) === 'h1');
+  check('기록 상한을 넘어도 열린 문서는 세션을 지킨다', oldest?.sessionId === 'session-h1', String(oldest?.sessionId));
+  artifactOpen('h1');
+  await sleep(400);
+  now = await list();
+  check('기록에서 빠졌다 id 없이 다시 열어도 세션을 지킨다', now.open.find((r) => nameOf(r) === 'h1')?.sessionId === 'session-h1');
+  await sw.evaluate(async () => chrome.storage.local.set({ config: {} }));
+
+  await sw.evaluate(async () => chrome.storage.local.set({ config: { matchMode: 'title' } }));
+  writeDoc('titled');
+  artifactOpen('titled', 'session-titled');
+  await sleep(800);
+  now = await list();
+  const titled = now.open.find((r) => r.key === 'title:titled');
+  check('제목 기준 모드에서도 세션이 남는다', titled?.sessionId === 'session-titled', `${titled?.key} ${titled?.sessionId}`);
+  await sw.evaluate(async () => chrome.storage.local.set({ config: {} }));
+  await sleep(300);
+  now = await list();
 
   const panelAfter = await domOrder();
   const listAfter = [...now.open, ...now.closed].map((r) => r.title);

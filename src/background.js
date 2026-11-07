@@ -11,7 +11,7 @@
 import { getConfig } from './lib/config.js';
 import { artifactKey, displayName, filePathOf } from './lib/keys.js';
 import { planAgeCleanup, planMissingCleanup, missingKeysFrom } from './lib/cleanup.js';
-import { DOCK_LIST_PROTOCOL, buildDockList, listRow, sessionIdFrom } from './lib/dockList.js';
+import { DOCK_LIST_PROTOCOL, DOC_SESSIONS_KEY, buildDockList, listRow, rememberDocSession, sessionIdFrom } from './lib/dockList.js';
 import { DOCK_WINDOW_KEY, chooseTargetWindow } from './lib/windows.js';
 
 // ────────────────────────────────────────────────────────────
@@ -282,19 +282,21 @@ async function writeHistory(tab, sessionId) {
   if (!key) return;
 
   const { history = [] } = await chrome.storage.local.get('history');
-  const previous = history.find((h) => h.key === key);
   const rest = history.filter((h) => h.key !== key);
-  // 마지막으로 id 를 갖고 연 세션이 이긴다. 사람이 Chrome 에서 다시 연 것은 id 가 없으니 이전 값을 지킨다.
-  const owner = sessionId ?? previous?.sessionId;
   rest.unshift({
     key,
     url,
     title: displayName(url, tab.title),
     at: Date.now(),
-    pinned: previous?.pinned || false,
-    ...(owner ? { sessionId: owner } : {}),
+    pinned: history.find((h) => h.key === key)?.pinned || false,
   });
-  await chrome.storage.local.set({ history: rest.slice(0, cfg.historyLimit) });
+  const writes = { history: rest.slice(0, cfg.historyLimit) };
+  // 마지막으로 id 를 갖고 연 세션이 이긴다. 사람이 Chrome 에서 다시 연 것은 id 가 없으니 그대로 둔다.
+  if (sessionId) {
+    const { [DOC_SESSIONS_KEY]: sessions = {} } = await chrome.storage.local.get(DOC_SESSIONS_KEY);
+    writes[DOC_SESSIONS_KEY] = rememberDocSession(sessions, url, sessionId);
+  }
+  await chrome.storage.local.set(writes);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -471,8 +473,8 @@ async function listForCli() {
   const cfg = await getConfig();
   const tabs = await chrome.tabs.query({});
   const [{ id: activeId } = {}] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const { history = [] } = await chrome.storage.local.get('history');
-  const { open, closed } = buildDockList({ tabs, history, activeId, cfg });
+  const { history = [], [DOC_SESSIONS_KEY]: sessions = {} } = await chrome.storage.local.get(['history', DOC_SESSIONS_KEY]);
+  const { open, closed } = buildDockList({ tabs, history, activeId, cfg, sessions });
   const { supported, keys } = await findMissingKeys();
   return {
     ok: true,
