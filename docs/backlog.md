@@ -6,6 +6,18 @@
 
 ## Open
 
+### `matchMode: 'title'` — 같은 문서가 「열림」과 「최근 닫힘」에 함께 나오고 고정·순서를 잃음
+- Discovered: 2026-11-07, 0.7.0 소켓 `list` 시험 중 (제목 기준 모드 세션 연결을 고치다가)
+- Why deferred: 세션 연결만 이번 범위라 그쪽만 주소 기준으로 옮겼다(`docSessions`). 이 동작은 그 전부터 있었고 기본값(`path`)에서는 안 생긴다
+- Trigger: 제목 기준 모드를 쓰는 사람이 생기거나, 사이드바 키 규칙을 다음에 손댈 때
+- Evidence: 탭이 막 열린 순간에는 제목이 없어 기록이 `file:` 키로 저장되고(`artifactKey`), 제목이 붙으면 열린 행의 키가 `title:…` 로 바뀐다. `buildDockList` 는 키로 기록을 찾으므로 열린 행의 `pinned`·`at` 이 비고, 기록은 닫힌 묶음으로 간다. 시험 로그: 열린 묶음 `titled` · 닫힌 묶음 `titled.html` 이 동시에 나옴(실제 Chromium, `tests/dock-list.e2e.mjs` 를 제목 모드로 돌린 화면)
+
+### `tests/host.test.py` — 끝난 뒤 `/tmp/artifact-dock-test-<pid>.sock` 이 남음
+- Discovered: 2026-11-07, 0.7.0 작업 중 `/tmp` 정리에서
+- Why deferred: 시험 위생이고 동작에는 영향이 없다
+- Trigger: 이 시험을 다음에 고칠 때
+- Evidence: 호스트는 stdin 이 닫혀 끝날 때만 소켓을 지우는데(`host/artifact_dock_host.py:187-190`) 시험이 `p.terminate()` 로 먼저 끝낸다. 실행 뒤 `srw------- /tmp/artifact-dock-test-13643.sock` 1개를 확인했다.
+
 ### `src/sidepanel.css` — `.host-status` 의 `display:block` 이 `hidden` 속성을 덮어씀
 - Discovered: 2026-10-09, 0.5.0 사이드바 목록 개선(PR #1) 작업 중
 - Why deferred: 피드백 범위 밖이고, 보이는 영향이 사이드바를 연 직후 잠깐(연결 상태 응답 전, 최대 약 0.8초)뿐이다
