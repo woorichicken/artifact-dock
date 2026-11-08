@@ -11,6 +11,7 @@
 import { getConfig } from './lib/config.js';
 import { artifactKey, displayName, filePathOf } from './lib/keys.js';
 import { planAgeCleanup, planMissingCleanup, missingKeysFrom } from './lib/cleanup.js';
+import { DOCK_LIST_PROTOCOL, DOC_SESSIONS_KEY, buildDockList, listRow, rememberDocSession, sessionIdFrom } from './lib/dockList.js';
 import { DOCK_WINDOW_KEY, chooseTargetWindow } from './lib/windows.js';
 
 // ────────────────────────────────────────────────────────────
@@ -263,7 +264,17 @@ async function tidyStrayArtifactTabs() {
 // 히스토리 (닫힌 문서도 사이드바에서 다시 열 수 있게)
 // ────────────────────────────────────────────────────────────
 
-async function touchHistory(tab) {
+// 읽고-고쳐-쓰는 동안 다른 호출이 끼면 한쪽이 쓴 값이 사라진다. 탭을 만든 직후에는 onCreated 와
+// openFromCli 가 동시에 부를 수 있어서(어느 쪽이 먼저인지 정해져 있지 않다) 차례로 돌린다.
+let historyWrites = Promise.resolve();
+
+function touchHistory(tab, sessionId) {
+  const run = () => writeHistory(tab, sessionId);
+  historyWrites = historyWrites.then(run, run);
+  return historyWrites;
+}
+
+async function writeHistory(tab, sessionId) {
   if (!tab) return;
   const cfg = await getConfig();
   const url = tab.url || tab.pendingUrl || '';
@@ -279,7 +290,13 @@ async function touchHistory(tab) {
     at: Date.now(),
     pinned: history.find((h) => h.key === key)?.pinned || false,
   });
-  await chrome.storage.local.set({ history: rest.slice(0, cfg.historyLimit) });
+  const writes = { history: rest.slice(0, cfg.historyLimit) };
+  // 마지막으로 id 를 갖고 연 세션이 이긴다. 사람이 Chrome 에서 다시 연 것은 id 가 없으니 그대로 둔다.
+  if (sessionId) {
+    const { [DOC_SESSIONS_KEY]: sessions = {} } = await chrome.storage.local.get(DOC_SESSIONS_KEY);
+    writes[DOC_SESSIONS_KEY] = rememberDocSession(sessions, url, sessionId);
+  }
+  await chrome.storage.local.set(writes);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -404,10 +421,10 @@ function connectHost() {
       return;
     }
     if (!msg) return;
-    if (msg.cmd !== 'open') return;
+    if (msg.cmd !== 'open' && msg.cmd !== 'list') return;
     let reply;
     try {
-      reply = await openFromCli(msg);
+      reply = msg.cmd === 'list' ? await listForCli() : await openFromCli(msg);
     } catch (e) {
       reply = { ok: false, error: String(e) };
     }
@@ -447,8 +464,31 @@ async function askHost(cmd, payload) {
   });
 }
 
-async function openFromCli({ url, activate = false }) {
+/**
+ * 소켓 `list`: 사이드바와 같은 목록을 읽어서 돌려준다. 읽기만 한다 — 탭·창·기록의 `at` 을 건드리면
+ * 폰에서 보는 것만으로 순서가 바뀐다(0.6.1·0.6.2 되돌림, e943f80). 그래서 touchHistory·notifyPanel 도 안 부른다.
+ * 응답 최상위에 `cmd` 를 쓰지 않는다: 호스트가 확장이 묻는 명령으로 오인한다.
+ */
+async function listForCli() {
+  const cfg = await getConfig();
+  const tabs = await chrome.tabs.query({});
+  const [{ id: activeId } = {}] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const { history = [], [DOC_SESSIONS_KEY]: sessions = {} } = await chrome.storage.local.get(['history', DOC_SESSIONS_KEY]);
+  const { open, closed } = buildDockList({ tabs, history, activeId, cfg, sessions });
+  const { supported, keys } = await findMissingKeys();
+  return {
+    ok: true,
+    protocol: DOCK_LIST_PROTOCOL,
+    extVersion: chrome.runtime.getManifest().version,
+    missingSupported: supported,
+    open: open.map((item) => listRow(item, keys)),
+    closed: closed.map((item) => listRow(item, keys)),
+  };
+}
+
+async function openFromCli({ url, activate = false, sessionId: rawSessionId }) {
   if (!url) return { ok: false, error: 'url 이 없습니다' };
+  const sessionId = sessionIdFrom(rawSessionId);
   const cfg = await getConfig();
   const key = artifactKey(url, cfg);
 
@@ -465,7 +505,7 @@ async function openFromCli({ url, activate = false }) {
           await chrome.windows.update(existing.windowId, { focused: true });
         } catch {}
       }
-      await touchHistory(existing);
+      await touchHistory(existing, sessionId);
       notifyPanel();
       return { ok: true, reused: true, tabId: existing.id };
     }
@@ -483,7 +523,7 @@ async function openFromCli({ url, activate = false }) {
 
   selfCreated.add(tab.id);
   if (cfg.autoGroup) await addToGroup(tab, cfg);
-  await touchHistory(tab);
+  await touchHistory(tab, sessionId);
   await enforceTabLimit();
   notifyPanel();
   return { ok: true, reused: false, tabId: tab.id };

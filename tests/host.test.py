@@ -69,6 +69,57 @@ exists_ok = ("exists" in (ready.get("caps") or [])
 print("   exists RESULT:", "PASS" if exists_ok else "FAIL")
 ok = ok and exists_ok
 
+# artifact-open: CLIMANAGER_SESSION_ID 를 어느 세션이 연 문서인지로 싣는다
+def open_with_session(value):
+    result.clear()
+    threading.Thread(target=fake_extension, daemon=True).start()
+    time.sleep(0.2)
+    run_env = {k: v for k, v in env.items() if k != "CLIMANAGER_SESSION_ID"}
+    if value is not None:
+        run_env["CLIMANAGER_SESSION_ID"] = value
+    code = subprocess.run(["bash", CLI, "/tmp/dock-test-a.html"], capture_output=True, text=True, env=run_env).returncode
+    time.sleep(0.3)
+    return code, result.get("req", {})
+
+session_checks = [
+    ("env 있음 → 실림", "a75709d6-1b2c", "a75709d6-1b2c"),
+    ("env 없음 → 칸 없음", None, None),
+    ("이상한 값 → 칸 없음", "../x y", None),
+    ("긴 값 → 칸 없음", "a" * 65, None),
+    ("빈 값 → 칸 없음", "", None),
+]
+session_ok = True
+for label, value, want in session_checks:
+    code, req = open_with_session(value)
+    good = code == 0 and req.get("sessionId") == want and ("sessionId" in req) == (want is not None)
+    print(f"7) {label}: exit={code} sessionId={req.get('sessionId')!r} {'PASS' if good else 'FAIL'}")
+    session_ok = session_ok and good
+ok = ok and session_ok
+
+# CLI Manager → 소켓 `list`: 호스트는 요청을 그대로 넘기고, 응답(최상위 cmd 없음)을 그대로 돌려준다
+import socket as _socket
+def fake_list_extension():
+    msg = read_msg()
+    result["req"] = msg
+    send_msg({"id": msg["id"], "ok": True, "protocol": 1, "extVersion": "0.7.0", "missingSupported": True,
+              "open": [{"key": "file:/a.html", "title": "a", "sub": "~", "at": 1, "pinned": True, "missing": False, "sessionId": "s1", "url": "file:///a.html"}],
+              "closed": []})
+result.clear()
+threading.Thread(target=fake_list_extension, daemon=True).start()
+time.sleep(0.2)
+sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+sock.settimeout(5)
+sock.connect(TEST_SOCK)
+sock.sendall(b'{"cmd":"list","v":1}\n')
+line = sock.makefile("r", encoding="utf-8").readline()
+sock.close()
+list_reply = json.loads(line)
+list_ok = (result.get("req", {}).get("cmd") == "list" and result.get("req", {}).get("v") == 1
+           and list_reply.get("ok") is True and list_reply.get("protocol") == 1
+           and [r["sessionId"] for r in list_reply.get("open", [])] == ["s1"] and "cmd" not in list_reply)
+print("8) list 왕복 =", result.get("req"), "→ open", len(list_reply.get("open", [])), "RESULT:", "PASS" if list_ok else "FAIL")
+ok = ok and list_ok
+
 p.stdin.close(); p.terminate()
 for f in ("/tmp/dock-test-a.html", "/tmp/dock 테스트/보고서 v2.html"):
     try: os.remove(f)

@@ -30,18 +30,24 @@ warn() { [ "$QUIET" = "1" ] || echo "artifact-open: $*" >&2; }
 # 확장에 요청을 보낸다. 0=명시적 성공 응답, 그 외=실패.
 send_to_extension() {
   python3 - "$SOCK" "$1" "$2" <<'PY'
-import json, pathlib, socket, sys
+import json, os, pathlib, re, socket, sys
 
 sock_path, target, activate = sys.argv[1], sys.argv[2], sys.argv[3] == "1"
 
 # 파일 경로는 확장이 이해하는 file:// URL 로 바꾼다. 공백·한글은 as_uri 가 인코딩해 준다.
 url = target if "://" in target else pathlib.Path(target).as_uri()
 
+request = {"cmd": "open", "url": url, "activate": activate}
+# CLI Manager 터미널 안에서 열면 어느 세션이 연 문서인지 남긴다. 모양이 다른 값은 싣지 않는다.
+session_id = os.environ.get("CLIMANAGER_SESSION_ID", "")
+if re.fullmatch(r"[\w-]{1,64}", session_id, re.ASCII):
+    request["sessionId"] = session_id
+
 try:
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.settimeout(9)
     s.connect(sock_path)
-    s.sendall((json.dumps({"cmd": "open", "url": url, "activate": activate}) + "\n").encode())
+    s.sendall((json.dumps(request) + "\n").encode())
     line = s.makefile("r", encoding="utf-8").readline()
     resp = json.loads(line) if line.strip() else {}
 except (FileNotFoundError, ConnectionRefusedError, socket.timeout, OSError):

@@ -3,7 +3,8 @@
 // (탭 상태의 진짜 원본은 브라우저이고, 사본을 만들면 반드시 어긋난다)
 
 import { getConfig } from './lib/config.js';
-import { artifactKey, displayName, subLabel } from './lib/keys.js';
+import { artifactKey } from './lib/keys.js';
+import { buildDockList } from './lib/dockList.js';
 import { matchesQuery } from './lib/search.js';
 import { t, applyI18n, copyAgentPrompt } from './lib/i18n.js';
 import { DOCK_WINDOW_KEY } from './lib/windows.js';
@@ -27,66 +28,8 @@ async function collect() {
   const cfg = await getConfig();
   const tabs = await chrome.tabs.query({});
   const [{ id: activeId } = {}] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-  // 같은 문서를 가리키는 탭이 여러 개면 한 줄로 묶는다.
-  // (목록에까지 중복이 그대로 보이면 사이드바를 만든 의미가 없다)
-  const byKey = new Map();
-  let openTabCount = 0;
-  for (const t of tabs) {
-    const url = t.url || t.pendingUrl || '';
-    const key = artifactKey(url, cfg, t.title);
-    if (!key) continue;
-    openTabCount++;
-
-    const existing = byKey.get(key);
-    if (existing) {
-      existing.dupes.push(t.id);
-      // 활성 탭이 있으면 그쪽을 대표로 올린다
-      if (t.id === activeId) {
-        existing.dupes = existing.dupes.filter((id) => id !== t.id).concat(existing.tabId);
-        existing.tabId = t.id;
-        existing.windowId = t.windowId;
-        existing.isActive = true;
-      }
-      continue;
-    }
-
-    byKey.set(key, {
-      key,
-      url,
-      tabId: t.id,
-      windowId: t.windowId,
-      title: displayName(url, t.title),
-      sub: subLabel(url),
-      favIconUrl: t.favIconUrl,
-      isActive: t.id === activeId,
-      dupes: [],
-    });
-  }
-  const open = [...byKey.values()];
-  const openKeys = new Set(byKey.keys());
-
   const { history = [] } = await chrome.storage.local.get('history');
-  const byHistory = new Map(history.map((h) => [h.key, h]));
-  open.forEach((o) => {
-    o.pinned = !!byHistory.get(o.key)?.pinned;
-    o.at = byHistory.get(o.key)?.at ?? 0;
-  });
-
-  const closed = history
-    .filter((h) => !openKeys.has(h.key))
-    .map((h) => ({ ...h, title: h.title, sub: subLabel(h.url), closed: true }));
-
-  // 📌 고정 → 최근에 열린(에이전트가 열거나 다시 쓴) 순.
-  // 예전에는 탭 순서 그대로였는데, solo 보기는 문서를 고를 때마다 탭을 그룹 밖으로 꺼냈다
-  // 넣으면서 탭 순서를 바꾼다 → 클릭할 때마다 목록이 뒤섞여 보였다. 고르는 동작으로는 바뀌지 않는
-  // 기준(at)으로 정렬해서 순서를 고정한다. 기록이 없는 탭은 맨 아래, 그 안에서는 나중에 연 탭이 위.
-  const byRecent = (a, b) =>
-    Number(b.pinned) - Number(a.pinned) || (b.at ?? 0) - (a.at ?? 0) || (b.tabId ?? 0) - (a.tabId ?? 0);
-  open.sort(byRecent);
-  closed.sort(byRecent);
-
-  return { open, closed, openTabCount };
+  return buildDockList({ tabs, history, activeId, cfg });
 }
 
 function matches(item) {
